@@ -12,6 +12,10 @@ class Particle(object):
     number that is used to access the position of the particle.
     """
     _coords = None
+
+    @classmethod
+    def set_coords(cls, coords):
+        cls._coords = coords
     
     @validatedproperty
     def serial(value):
@@ -84,7 +88,9 @@ class Universe(object):
         self.coords = np.zeros((n_particles,3))
         self.forces = np.zeros((n_particles,3))
 
-    def __iter_(self):
+        Particle.set_coords(self.coords)
+
+    def __iter__(self):
 
         for serial in xrange(self.n_particles):
             yield Particle(serial)

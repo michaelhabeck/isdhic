@@ -5,9 +5,9 @@ import isdhic
 import numpy as np
 
 from scipy.spatial import cKDTree
+from scipy.spatial.distance import squareform
 
 from csb.bio.utils import distance_matrix
-from scipy.spatial.distance import squareform
 
 def kd_pairs(coords, cellsize):
 
