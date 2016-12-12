@@ -5,10 +5,14 @@ particle-particle clashses. ROSETTA is a ramped Lennard-Jones potential.
 import numpy as np
 
 from ._isdhic import prolsq, rosetta
+from .nblist import NBList
 from .core import ctypeproperty, CWrapper, Nominable
 
-class PROLSQ(Nominable, CWrapper):
+class Forcefield(Nominable, CWrapper):
+    """Forcefield
 
+    Non-bonded force field enforcing volume exclusion. 
+    """
     @ctypeproperty(np.array)
     def k():
         pass
@@ -32,15 +36,12 @@ class PROLSQ(Nominable, CWrapper):
         if value is not None:
             self.ctype.nblist = value.ctype
 
-    def __init__(self, name='PROLSQ'):
+    def __init__(self, name):
 
         self.init_ctype()
         self.set_default_values()
 
         self.name = name
-
-    def init_ctype(self):
-        self.ctype = prolsq()
 
     def set_default_values(self):
 
@@ -57,17 +58,11 @@ class PROLSQ(Nominable, CWrapper):
     def disable(self):
         self.enable(0)
 
-    def link_parameters(self, universe):
-        self.types = np.zeros(universe.n_particles,'i')
+    def energy(self, coords, update=True):
 
-    def energy(self, universe, update=True):
+        if update: self.ctype.nblist.update(coords.reshape(-1,3),1)
 
-        ctype = self.ctype
-        c_univ = universe.ctype
-
-        if update: ctype.nblist.update(universe.coords,1)
-
-        return ctype.energy(c_univ, self.types)
+        return self.ctype.energy(coords.reshape(-1,3), self.types)
 
     def update_gradient(self, universe, update=True):
 
@@ -79,15 +74,21 @@ class PROLSQ(Nominable, CWrapper):
         return c_univ.forces
 
     def __str__(self):
-
-        s = '{0}(k={1:.2f}, n_types={2:.2f}, 14_decrement={3:.2f})'
-
-        return s.format(self.__class__.__name__, self.K, self.n_types,
-                        self.decrement_14)
+        s = '{0}(n_types={1:.2f})'
+        
+        return s.format(self.__class__.__name__, self.n_types)
 
     __repr__ = __str__
 
-class ROSETTA(PROLSQ):
+class PROLSQ(Forcefield):
+
+    def __init__(self, name='PROLSQ'):
+        super(PROLSQ, self).__init__(name)
+
+    def init_ctype(self):
+        self.ctype = prolsq()
+
+class ROSETTA(Forcefield):
 
     @ctypeproperty(float)
     def r_max():
@@ -101,6 +102,37 @@ class ROSETTA(PROLSQ):
     def r_sw():
         pass
 
+    def __init__(self, name='ROSETTA'):
+        super(ROSETTA, self).__init__(name)
+
     def init_ctype(self):
         self.ctype = rosetta()
 
+class ForcefieldFactory(object):
+
+    @classmethod
+    def create_forcefield(cls, name, universe):
+
+        name = name.lower()
+
+        if name == 'rosetta':
+            forcefield = ROSETTA()
+            cellsize = 5.51
+            
+        elif name == 'prolsq':
+            forcefield = PROLSQ()
+            cellsize = 3.71
+            
+        else:
+            msg = 'Forcefield "{}" not supported'
+            raise ValueError(msg.format(name))
+
+        nblist   = NBList(cellsize, 100, 500, universe.n_particles)
+
+        forcefield.nblist = nblist
+        forcefield.n_types = 1
+        forcefield.k = np.array([[1.]])
+        forcefield.d = np.array([[1.]])
+        forcefield.types = np.zeros(universe.n_particles,'i')
+
+        return forcefield    

@@ -41,6 +41,11 @@ if __name__ == '__main__':
     contacts     = isdhic.ModelDistances(coords, pairs, 'contacts')
     chain        = isdhic.ModelDistances(coords, connectivity, 'chain')
     distances    = isdhic.ModelDistances(coords, connectivity + pairs, 'all')
+    
+    params = isdhic.Parameters()
+
+    for param in (precision, coords, distances):
+        params.add(param)
 
     coords.set(utils.randomwalk(n_particles) * diameter)
 
@@ -50,10 +55,10 @@ if __name__ == '__main__':
 
     print 'Comparing cython with numpy implementation\n'
 
-    with take_time('\tevaluate {} using cython'.format(contacts)):
+    with take_time('\tevaluate "{}" using cython'.format(contacts.name)):
         contacts.update()
 
-    with take_time('\tevaluate {} using numpy'.format(contacts)):
+    with take_time('\tevaluate "{}" using numpy'.format(contacts.name)):
         d_numpy = numpy_distances(contacts, universe)
         
     print '\n\tmax discrepancy between distances: {0:.1e}\n'.format(
@@ -61,17 +66,17 @@ if __name__ == '__main__':
 
     print 'Does it pay off to evaluate all distances at once?\n'
 
-    with take_time('\tfirst {0}, then {1}'.format(chain,contacts)):
+    with take_time('\tfirst "{0}", then "{1}"'.format(chain.name,contacts.name)):
         chain.update()
         contacts.update()
 
-    with take_time('\tnow {0}'.format(distances)):
+    with take_time('\t"{0}"'.format(distances.name)):
         distances.update()
 
     print '\n\tmax discrepancy between distances: {0:.1e}\n'.format(
         np.fabs(distances.get() - np.concatenate((chain.get(), contacts.get()),0)).max())
 
-    #params = isdhic.Parameters()
+    print params
 
     if False:
 

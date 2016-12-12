@@ -108,8 +108,8 @@ void       forcefield_init(PyForceFieldObject *self);
 void       forcefield_dealloc(PyForceFieldObject *self);
 int        forcefield_setattr(PyForceFieldObject *self, char *name, PyObject *op);
 PyObject * forcefield_getattr(PyForceFieldObject *self, char *name);
-double     forcefield_energy(PyForceFieldObject *self, PyUniverseObject *universe, int *types);
-double     forcefield_gradient(PyForceFieldObject *self, PyUniverseObject *universe, int *types, double *E);
+double     forcefield_energy(PyForceFieldObject *self, double *coords, int *types, int n_particles);
+double     forcefield_gradient(PyForceFieldObject *self, double *coords, double *forces, int *types, int n_particles, double *E);
 
 PyObject * PyProlsq_New(PyObject *self, PyObject *args);
 PyObject * PyRosetta_New(PyObject *self, PyObject *args);

@@ -1,8 +1,8 @@
 import numpy as np
 
 from .core import Nominable
-
 from csb.core import validatedproperty
+from collections import OrderedDict
 
 class Parameter(Nominable):
     """Parameter
@@ -44,6 +44,25 @@ class Parameter(Nominable):
         
         pass
 
+    def __str__(self):
+        s = super(Parameter, self).__str__()
+        v = self._value
+        if np.iterable(v):
+            v = '{0:.2f}'.format(v[0]) if type(v[0]) == float else v[0]
+            v = '[{0},...]'.format(v)
+        return s.replace(')',', {})'.format(v))
+
+class Location(Parameter):
+    """Location
+
+    Scalar location parameter
+    """
+    def set_default(self):
+        self.set(0.)
+
+    def set(self, value):
+        self._value = float(value)
+
 class Scale(Parameter):
     """Scale
 
@@ -56,8 +75,10 @@ class Scale(Parameter):
         value = float(value)
         if value < 0.:
             msg = '{} must be non-negative'
-            raise ValueError(msg.format(self.__class__.__name))
+            raise ValueError(msg.format(self.__class__.__name__))
 
+        self._value = value
+        
 class Precision(Scale):
     """Precision
 
@@ -109,7 +130,7 @@ class Distances(Parameter):
         for i in xrange(len(self)):
             yield (self._first_index[i], self._second_index[i])
 
-    def __init__(self, pairs, name='Particle-particle distances'):
+    def __init__(self, pairs, name='distances'):
         """Distances
 
         Pairwise distances between particles
@@ -143,7 +164,7 @@ class ModelDistances(Distances):
 
     Class for storing and *evaluating* inter-particle distances. 
     """
-    def __init__(self, coords, pairs, name='Particle-particle distances'):
+    def __init__(self, coords, pairs, name='distances'):
         """Distances
 
         Pairwise distances between particles
@@ -181,11 +202,35 @@ class Parameters(object):
     """
     def __init__(self):
         
-        self._params = ()
-        
-    def get(self, *attrs):
-        """
-        Convenience method for retrieving a list of parameters
-        """
-        return [getattr(self,attr) for attr in attrs]
+        self._params = OrderedDict()
 
+    def add(self, param):
+
+        if param in self._params:
+            msg = 'Parameter "{}" already added'.format(param)
+            raise ValueError(msg)
+
+        self._params[param.name] = param
+
+    def __str__(self):
+        s = ['Parameters:']
+        for param in self:
+            s.append('    {}'.format(param))
+        return '\n'.join(s)
+    
+    def __iter__(self):
+
+        return iter(self._params.values())
+
+    def get(self):
+
+        return [param.get() for param in self]
+
+    def set(self, values):
+
+        for param, value in zip(self, values):
+            param.set(value)
+
+    def __getitem__(self, name):
+
+        return self._params[name]

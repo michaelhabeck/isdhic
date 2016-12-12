@@ -3,26 +3,26 @@
 #include "isdhic.h"
 
 double forcefield_energy(PyForceFieldObject *self, 
-			 PyUniverseObject *universe, 
-			 int *types) {
+			 double *coordinates, 
+			 int *types,
+			 int n_particles) {
   /*
     Evaluates non-bonded interactions based on the current neighbor list. 
    */
   if (!self->enabled) return 0.;
 
   int n_types     = self->n_types;
-  int n_particles = universe->n_particles;
   int *n_contacts = self->nblist->n_contacts;
   int **contacts  = self->nblist->contacts;
+  vector *coords  = (vector*) coordinates;
 
   double *k = self->k;
   double *d = self->d;
-  vector *coords = (vector*) universe->coords->data;
 
   double E=0., r;
   int    *contacts_i, index, i, j, type_i, n;
   vector dx;
-
+  
   /* loop through interactions of all atoms */
 
   for (i = 0; i < n_particles; i++) {
@@ -50,8 +50,10 @@ double forcefield_energy(PyForceFieldObject *self,
 }
 
 double forcefield_gradient(PyForceFieldObject *self, 
-			   PyUniverseObject *universe, 
+			   double *coordinates,
+			   double *gradient,
 			   int *types, 
+			   int n_particles,
 			   double *E_ptr) {
   /*
     Evaluates the non-bonded energy and its gradient based on the current neighbor list. 
@@ -59,15 +61,14 @@ double forcefield_gradient(PyForceFieldObject *self,
   if (!self->enabled) return -1;
 
   int n_types     = self->n_types;
-  int n_particles = universe->n_particles;
   int *n_contacts = self->nblist->n_contacts;
   int **contacts  = self->nblist->contacts;
 
   double *k = self->k;
   double *d = self->d;
 
-  vector *forces = (vector*) universe->forces->data;
-  vector *coords = (vector*) universe->coords->data;
+  vector *forces = (vector*) gradient;
+  vector *coords = (vector*) coordinates;
 
   double E=0., r, c;
   int    *contacts_i, index, i, j, n, l, type_i;

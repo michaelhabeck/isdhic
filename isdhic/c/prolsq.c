@@ -34,41 +34,66 @@ static double prolsq_gradient(PyForceFieldObject *_self, double d, double d0, do
   return c;
 }
 
-static double energy(PyProlsqObject *self, PyUniverseObject *universe, int *types) {
-  return forcefield_energy((PyForceFieldObject*)self, universe, types);
+static double energy(PyProlsqObject *self, 
+		     double *coords, 
+		     int *types, 
+		     int n_particles) {
+
+  return forcefield_energy((PyForceFieldObject*)self, coords, types, n_particles);
 }
 
-static int gradient(PyProlsqObject *self, PyUniverseObject *universe, int *types, double *E_ptr) {
-  return forcefield_gradient((PyForceFieldObject*)self, universe, types, E_ptr);
+static int gradient(PyProlsqObject *self, 
+		    double *coords, 
+		    double *forces, 
+		    int *types, 
+		    int n_particles, 
+		    double *E_ptr) {
+
+  return forcefield_gradient((PyForceFieldObject*)self, coords, forces, types, n_particles, E_ptr);
 }
 
 static PyObject * py_energy(PyProlsqObject *self, PyObject *args) {
   
-  PyUniverseObject *universe;
-  PyArrayObject *types;
+  PyArrayObject *coords, *types;
 
-  if (!PyArg_ParseTuple(args, "O!O!", &PyUniverse_Type, &universe, &PyArray_Type, &types)) {
-    RAISE(PyExc_StandardError, "universe and numpy array storing atom types expected.", NULL);
+  if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &coords, &PyArray_Type, &types)) {
+    RAISE(PyExc_StandardError, "numpy arrays storing coordinates and atom types expected.", NULL);
   }
-  return Py_BuildValue("d", forcefield_energy((PyForceFieldObject*)self, universe, (int*) types->data));
+  return Py_BuildValue("d", forcefield_energy((PyForceFieldObject*)self, 
+					      (double*) coords->data, 
+					      (int*) types->data,
+					      types->dimensions[0]));
 }
 
 static PyObject * py_update_gradient(PyProlsqObject *self, PyObject *args) {
   
   int calculate_energy = 0;
-  PyUniverseObject *universe;
-  PyArrayObject *types;
+  PyArrayObject *coords, *forces, *types;
   double E;
 
-  if (!PyArg_ParseTuple(args, "O!O!i", &PyUniverse_Type, &universe, &PyArray_Type, &types, &calculate_energy)) {
-    RAISE(PyExc_TypeError, "universe and numpy array storing atom types expected.", NULL);
+  if (!PyArg_ParseTuple(args, "O!O!O!i", 
+			&PyArray_Type, &coords, 
+			&PyArray_Type, &forces, 
+			&PyArray_Type, &types, 
+			&calculate_energy)) {
+    RAISE(PyExc_TypeError, "numpy arrays storing coordinates, forces and atom types expected.", NULL);
   }
   if (calculate_energy) {
-    gradient(self, universe, (int*) types->data, &E);
+    gradient(self, 
+	     (double*) coords->data, 
+	     (double*) forces->data, 
+	     (int*) types->data, 
+	     types->dimensions[0],
+	     &E);
     return Py_BuildValue("d", E);
   }
   else {
-    gradient(self, universe, (int*) types->data, NULL);
+    gradient(self, 
+	     (double*) coords->data, 
+	     (double*) forces->data, 
+	     (int*) types->data, 
+	     types->dimensions[0],
+	     NULL);
     RETURN_PY_NONE;
   }
 }
