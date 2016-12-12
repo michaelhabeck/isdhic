@@ -15,7 +15,7 @@ class Probability(Nominable):
         if not isinstance(params, Parameters):
             msg = 'Argument must be an instance of the Parameters class'            
             raise TypeError(msg)
-
+        
         cls._params = params
         
     @property

@@ -1,20 +1,125 @@
 """
 Collection of priors.
 """
-from .model import Probability
+import numpy as np
 
-class PriorCoordinates(Probability):
+from .model import Probability
+from .params import Scale, Location
+
+class BoltzmannEnsemble(Probability):
+
+    @property
+    def beta(self):
+        """
+        Inverse temperature
+        """
+        return self._beta.get()
+
+    @beta.setter
+    def beta(self, value):
+        self._beta.set(value)
 
     def __init__(self, name, forcefield):
 
-        super(PriorCoordinates, self).__init__(name)
+        super(BoltzmannEnsemble, self).__init__(name)
 
         self.forcefield = forcefield
 
+        self._beta = Scale(self.name + '.beta')
+        self.params.add(self._beta)
+
+        self._forces = self.params['coordinates'].get() * 0.
+        
     def log_prob(self):
 
         coords = self.params['coordinates'].get()
 
-        return - self.forcefield.energy(coords)
+        return - self.beta * self.forcefield.energy(coords)
 
+    def gradient(self):
 
+        coords = self.params['coordinates'].get()
+
+        self._forces[...] = 0.
+
+        self.forcefield.ctype.update_gradient(\
+            coords, self._forces, self.forcefield.types, 1)
+
+        self._forces *= -self.beta
+
+        return self._forces
+        
+class TsallisEnsemble(BoltzmannEnsemble):
+
+    @property
+    def q(self):
+        """
+        Tsallis parameter
+        """
+        return self._q.get()
+
+    @q.setter
+    def q(self, value):
+        value = float(value)
+        if value < 1.:
+            msg = 'Tsallis q must be greater or equal to one'
+            raise ValueError(msg)
+        self._q.set(value)
+
+    @property
+    def E_min(self):
+        """
+        Minimum energy
+        """
+        return self._E_min.get()
+
+    @E_min.setter
+    def E_min(self, value):
+        self._E_min.set(value)
+
+    def __init__(self, name, forcefield):
+
+        super(TsallisEnsemble, self).__init__(name, forcefield)
+
+        self._q = Scale(self.name + '.q')
+        self.params.add(self._q)
+
+        self._E_min = Location(self.name + '.E_min')
+        self.params.add(self._E_min)
+
+    def log_prob(self):
+
+        if self.q == 1.:
+            return super(TsallisEnsemble, self).log_prob()
+
+        else:
+            coords = self.params['coordinates'].get()
+            
+            E = self.beta * self.forcefield.energy(coords)
+            q = self.q
+            E_min = self.beta * self.E_min
+            
+            return - q / (q-1) * np.log(1 + (q-1) * (E-E_min)) - E_min
+
+    def gradient(self):
+
+        if self.q == 1.:
+            return super(TsallisEnsemble, self).gradient()
+
+        else:
+
+            coords = self.params['coordinates'].get()
+
+            self._forces[...] = 0.
+
+            E  = self.forcefield.ctype.update_gradient(
+                coords, self._forces, self.forcefield.types, 1)
+            q  = self.q
+            E *= self.beta
+            E_min = self.beta * self.E_min
+            f = - self.beta * q / (1 + (q-1) * (E-E_min))
+        
+            self._forces *= f
+
+            return self._forces
+        
