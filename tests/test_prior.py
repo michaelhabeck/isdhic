@@ -23,9 +23,10 @@ if __name__ == '__main__':
 
     universe     = utils.create_universe(n_particles=1e3, diameter=4.)
     coords       = isdhic.Coordinates(universe)
+    forces       = isdhic.Forces(universe)
     forcefield   = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
 
-    for param in (coords,): params.add(param)
+    for param in (coords,forces): params.add(param)
 
     boltzmann = isdhic.BoltzmannEnsemble('boltzmann',forcefield)
     tsallis   = isdhic.TsallisEnsemble('tsallis',forcefield)
@@ -43,14 +44,16 @@ if __name__ == '__main__':
     
     for prior in (boltzmann, tsallis):
 
+        forces.set(0.)        
         with take_time('\ncalculate forces {}'.format(prior)):
-            a = prior.gradient()
+            prior.update_forces()
 
+        a = forces.get().copy()
         f = lambda x, prior=prior: log_prob(x, prior)
         x = params['coordinates'].get().copy()
         b = optimize.approx_fprime(x, f, eps)
 
         cc = np.corrcoef(a,b)[0,1] * 100
-        d_max = np.max(np.fabs(a-b))x
+        d_max = np.max(np.fabs(a-b))
         
         print out.format(d_max, cc)

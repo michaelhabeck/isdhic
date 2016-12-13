@@ -36,17 +36,25 @@ if __name__ == '__main__':
 
     from test_params import random_pairs
 
+    ## create universe
+
     universe  = utils.create_universe(n_particles=1000, diameter=4.)
     coords    = isdhic.Coordinates(universe)
+    forces    = isdhic.Forces(universe)
+
+    ## create contact data
+    
     n_data    = 100
     pairs     = random_pairs(universe.n_particles, n_data)
     data      = np.random.random(n_data) * 10.
     mock      = isdhic.ModelDistances(coords, pairs, 'contacts')
     logistic  = Logistic('contacts', data, mock)
     logistic2 = isdhic.Logistic('contacts', data, mock)
-    params    = isdhic.Parameters()
 
-    for param in (coords, mock, logistic.steepness):
+    params    = isdhic.Parameters()
+    isdhic.Probability.set_params(params)
+    
+    for param in (coords, forces, mock, logistic.steepness):
         params.add(param)
 
     mock.update()
@@ -67,10 +75,8 @@ if __name__ == '__main__':
     with take_time('evaluating derivatives of cython version'):
         logistic2.update_derivatives()
 
-    forces = np.ascontiguousarray(universe.forces.reshape(-1,))
-    forces[...] = 0.
-
-    logistic.update_forces(forces)
+    forces.set(0.)
+    logistic.update_forces()
 
     ## numerical gradient
 
@@ -82,4 +88,5 @@ if __name__ == '__main__':
     forces_num = optimize.approx_fprime(x, f, 1e-5)
 
     print 'max discrepancy={0:.5e}, corr={1:.1f}'.format(
-        np.fabs(forces-forces_num).max(), np.corrcoef(forces,forces_num)[0,1]*100)
+        np.fabs(forces.get()-forces_num).max(),
+        np.corrcoef(forces.get(),forces_num)[0,1]*100)

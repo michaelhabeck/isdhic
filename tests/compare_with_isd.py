@@ -9,38 +9,6 @@ import numpy as np
 
 from isdhic.core import take_time
 
-class PosteriorCoordinates(isdhic.Probability):
-
-    def __init__(self, name, likelihoods=None, priors=None):
-
-        super(PosteriorCoordinates, self).__init__(name)
-
-        self.likelihoods = likelihoods or ()
-        self.priors = priors or ()
-
-    def log_prob(self):
-
-        log_p = 0.
-        
-        for prior in self.priors:
-            log_p += prior.log_prob()
-
-        for model in self.likelihoods:
-            model.mock.update()
-            log_p += model.log_prob()
-
-        return log_p
-
-    def update_forces(self, forces):
-
-        ## TODO: assuming that there is only a single prior
-
-        forces[...] = self.priors[0].gradient()
-
-        for model in self.likelihoods:
-            model.mock.update()
-            model.update_forces(forces)
-
 def report_log_prob(a, b):
     out = '  log_prob (isdhic / isd) = {0:0.5e} / {1:0.5e}\n'
     print out.format(a,b)
@@ -49,174 +17,189 @@ def report_gradient(a, b):
     print '  max discrepancy={0:.3e}, corr={1:.1f}'.format(
         np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
 
-## generate posterior with isd
+def create_isd_posterior(run='geo_rosetta_contacts_Rg'):
+    """
+    Generate isd posterior
+    """
+    cwd    = os.getcwd()
+    path   = os.path.expanduser('~/projects/hic2/py')
+    script = os.path.join(path, '{}.py'.format(run))
 
-path   = os.path.expanduser('~/projects/hic2/py')
-run    = 'geo_rosetta_contacts_Rg'
-script = os.path.join(path, '{}.py'.format(run))
+    if not path in sys.path: sys.path.insert(0, path)
 
-if not path in sys.path: sys.path.insert(0, path)
+    with open(script) as f:
 
-with open(script) as f:
+        exec f.read()
+        posterior.likelihoods['Rg'].enabled = 0
 
-    exec f.read()
+    os.chdir(cwd)
 
-    for name in posterior.likelihoods:
-        posterior.likelihoods[name].enabled = 0
-    L_bbone = posterior.likelihoods['backbone']
+    return posterior, contacts
+
+if __name__ == '__main__':
+
+    posterior, contacts = create_isd_posterior()
     
-## make isdhic classes
+    L_intra  = posterior.likelihoods['contacts']
+    L_bbone  = posterior.likelihoods['backbone']
+    prior    = posterior.conformational_priors['tsallis_prior']
+    beadsize = L_bbone.data.values[0]
+    
+    ## make isdhic classes
 
-n_particles  = len(posterior.universe.atoms)
+    n_particles  = len(posterior.universe.atoms)
 
-params       = isdhic.Parameters()
-isdhic.Probability.set_params(params)
+    params       = isdhic.Parameters()
+    isdhic.Probability.set_params(params)
 
-universe     = utils.create_universe(n_particles, beadsize)
-coords       = isdhic.Coordinates(universe)
+    universe     = utils.create_universe(n_particles, beadsize)
+    coords       = isdhic.Coordinates(universe)
+    forces       = isdhic.Forces(universe)
 
-forcefield   = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
-forcefield.d = np.array([[beadsize]])
-forcefield.k = np.array([[0.0486]])
+    forcefield   = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
+    forcefield.d = np.array([[beadsize]])
+    forcefield.k = np.array([[0.0486]])
 
-contacts     = isdhic.ModelDistances(coords, contacts, 'contacts')
-logistic     = isdhic.Logistic(contacts.name, L.data.values, contacts)
+    contacts     = isdhic.ModelDistances(coords, contacts, 'contacts')
+    logistic     = isdhic.Logistic(contacts.name, L_intra.data.values, contacts)
 
-connectivity = zip(range(n_particles-1),range(1,n_particles))
-backbone     = isdhic.ModelDistances(coords, connectivity, 'backbone')
-lowerupper   = isdhic.LowerUpper(backbone.name, L_bbone.data.values, backbone,
-                                 L_bbone.error_model.lower_bounds,
-                                 L_bbone.error_model.upper_bounds)
-                                 
-for param in (coords,): params.add(param)
+    connectivity = zip(range(n_particles-1),range(1,n_particles))
+    backbone     = isdhic.ModelDistances(coords, connectivity, 'backbone')
+    lowerupper   = isdhic.LowerUpper(backbone.name, L_bbone.data.values, backbone,
+                                     L_bbone.error_model.lower_bounds,
+                                     L_bbone.error_model.upper_bounds)
 
-tsallis = isdhic.TsallisEnsemble('tsallis',forcefield)
-tsallis.E_min = prior.E_min
-tsallis.beta  = prior.beta
+    for param in (coords, forces): params.add(param)
 
-tsallis.q = 1.06
-posterior.set_q(tsallis.q)
+    tsallis = isdhic.TsallisEnsemble('tsallis',forcefield)
+    tsallis.E_min = prior.E_min
+    tsallis.beta  = prior.beta
 
-logistic.alpha = L.error_model.alpha
-lowerupper.tau = L_bbone.error_model.k
+    tsallis.q = 1.06
+    posterior.set_q(tsallis.q)
 
-## Tsallis ensemble only
+    logistic.alpha = L_intra.error_model.alpha
+    lowerupper.tau = L_bbone.error_model.k
 
-print '\n--- testing Tsallis ensemble ---\n'
+    ## Tsallis ensemble only
 
-with take_time('calculating energy with isdhic'):
-    a = tsallis.log_prob()
-with take_time('calculating energy with isd'):
-    b = posterior.torsion_posterior.energy(coords.get())
+    print '\n--- testing Tsallis ensemble ---\n'
 
-report_log_prob(a,-b)
+    L_intra.enabled, prior.enabled, L_bbone.enabled = 0, 1, 0
 
-with take_time('calculating forces with isdhic'):
-    a = tsallis.gradient()
-with take_time('calculating forces with isd'):
-    b = posterior.torsion_posterior.gradient(coords.get())
+    with take_time('calculating energy with isdhic'):
+        a = tsallis.log_prob()
+    with take_time('calculating energy with isd'):
+        b = posterior.torsion_posterior.energy(coords.get())
 
-report_gradient(a,-b)
+    report_log_prob(a,-b)
 
-## logistic likelihood only
+    with take_time('calculating forces with isdhic'):
+        forces.set(0.)
+        tsallis.update_forces()
+    with take_time('calculating forces with isd'):
+        b = posterior.torsion_posterior.gradient(coords.get())
 
-print '\n--- testing Logistic likelihood ---\n'
+    report_gradient(forces.get(),-b)
 
-L.enabled, prior.enabled, L_bbone.enabled = 1, 0, 0
+    ## logistic likelihood only
 
-with take_time('evaluating logistic likelihood with isdhic'):
-    contacts.update()
-    a = logistic.log_prob()
-with take_time('evaluating logistic likelihood with isd'):
-    L.fill_mock_data()
-    b = L.error_model.energy(L)
+    print '\n--- testing Logistic likelihood ---\n'
 
-report_log_prob(a,-b)
+    L_intra.enabled, prior.enabled, L_bbone.enabled = 1, 0, 0
 
-a = np.ascontiguousarray(universe.forces.reshape(-1,))
-a[...] = 0.
+    with take_time('evaluating logistic likelihood with isdhic'):
+        contacts.update()
+        a = logistic.log_prob()
 
-with take_time('calculating forces with isdhic'):
-    contacts.update()
-    logistic.update_forces(a)
-with take_time('calculating forces with isd'):
-    b = posterior.torsion_posterior.gradient(coords.get())
+    with take_time('evaluating logistic likelihood with isd'):
+        L_intra.fill_mock_data()
+        b = L_intra.error_model.energy(L_intra)
 
-report_gradient(a,-b)
+    report_log_prob(a,-b)
 
-## lowerupper likelihood only
+    with take_time('calculating forces with isdhic'):
+        forces.set(0.)
+        contacts.update()
+        logistic.update_forces()
 
-print '\n--- testing LowerUpper model ---\n'
+    with take_time('calculating forces with isd'):
+        b = posterior.torsion_posterior.gradient(coords.get())
 
-L.enabled, prior.enabled, L_bbone.enabled = 0, 0, 1
+    report_gradient(forces.get(),-b)
 
-with take_time('evaluating lowerupper model with isdhic'):
-    backbone.update()
-    a = lowerupper.log_prob()
-with take_time('evaluating lowerupper model with isd'):
-    L_bbone.fill_mock_data()
-    b = L_bbone.error_model.energy(L_bbone)
+    ## lowerupper likelihood only
 
-report_log_prob(a,-b)
+    print '\n--- testing LowerUpper model ---\n'
 
-a = np.ascontiguousarray(universe.forces.reshape(-1,))
-a[...] = 0.
+    L_intra.enabled, prior.enabled, L_bbone.enabled = 0, 0, 1
 
-with take_time('calculating forces with isdhic'):
-    backbone.update()
-    lowerupper.update_forces(a)
-with take_time('calculating forces with isd'):
-    b = posterior.torsion_posterior.gradient(coords.get())
+    with take_time('evaluating lowerupper model with isdhic'):
+        backbone.update()
+        a = lowerupper.log_prob()
 
-report_gradient(a,-b)
+    with take_time('evaluating lowerupper model with isd'):
+        L_bbone.fill_mock_data()
+        b = L_bbone.error_model.energy(L_bbone)
 
-## full posterior
+    report_log_prob(a,-b)
 
-print '\n--- testing full posterior ---\n'
+    with take_time('calculating forces with isdhic'):
+        forces.set(0.)
+        backbone.update()
+        lowerupper.update_forces()
 
-L.enabled, prior.enabled, L_bbone.enabled = 1, 1, 1
+    with take_time('calculating forces with isd'):
+        b = posterior.torsion_posterior.gradient(coords.get())
 
-with take_time('evaluating posterior with isdhic'):
-    for mock in (backbone, contacts):
-        mock.update()
-    a = 0.
-    for model in (tsallis, logistic, lowerupper):
-        a += model.log_prob()
+    report_gradient(forces.get(),-b)
 
-with take_time('evaluating posterior with isd'):
-    b = posterior.torsion_posterior.energy(coords.get())
+    ## full posterior
 
-report_log_prob(a,-b)
+    print '\n--- testing full posterior ---\n'
 
-with take_time('calculating forces with isdhic'):
+    L_intra.enabled, prior.enabled, L_bbone.enabled = 1, 1, 1
 
-    a = tsallis.gradient()
+    with take_time('evaluating posterior with isdhic'):
+        for mock in (backbone, contacts):
+            mock.update()
+        a = 0.
+        for model in (tsallis, logistic, lowerupper):
+            a += model.log_prob()
 
-    for model in (logistic, lowerupper):
-        model.mock.update()
-        model.update_forces(a)
-        
-with take_time('calculating forces with isd'):
-    b = posterior.torsion_posterior.gradient(coords.get())
+    with take_time('evaluating posterior with isd'):
+        b = posterior.torsion_posterior.energy(coords.get())
 
-report_gradient(a,-b)
+    report_log_prob(a,-b)
 
-## testing conditional posterior over conformational degrees of freedom
+    with take_time('calculating forces with isdhic'):
 
-print '\n--- testing conditional posterior ---\n'
+        forces.set(0.)
+        tsallis.update_forces()
 
-p_coords = PosteriorCoordinates('Pr(x|D)', (lowerupper, logistic), (tsallis,))
+        for model in (logistic, lowerupper):
+            model.mock.update()
+            model.update_forces()
 
-with take_time('evaluating log probibility of {}'.format(p_coords)):
-    lgp = p_coords.log_prob()
-print '  log_prob={0:.5e}'.format(lgp)
+    with take_time('calculating forces with isd'):
+        b = posterior.torsion_posterior.gradient(coords.get())
 
-a = a.copy()
+    report_gradient(forces.get(),-b)
 
-forces = np.ascontiguousarray(universe.forces.reshape(-1,))
-forces[...] = 0.
+    ## testing conditional posterior over conformational degrees of freedom
 
-with take_time('\nevaluating forces of {}'.format(p_coords)):
-   p_coords.update_forces(forces)
+    print '\n--- testing conditional posterior ---\n'
 
-report_gradient(forces, a)
+    p_coords = isdhic.PosteriorCoordinates('Pr(x|D)', (lowerupper, logistic), (tsallis,))
+
+    with take_time('evaluating log probibility of {}'.format(p_coords)):
+        lgp = p_coords.log_prob()
+    print '  log_prob={0:.5e}'.format(lgp)
+
+    a = forces.get().copy()
+
+    with take_time('\nevaluating forces of {}'.format(p_coords)):
+        forces.set(0.)
+        p_coords.update_forces()
+
+    report_gradient(forces.get(), a)

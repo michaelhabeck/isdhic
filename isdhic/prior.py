@@ -28,6 +28,8 @@ class BoltzmannEnsemble(Probability):
         self._beta = Scale(self.name + '.beta')
         self.params.add(self._beta)
 
+        ## local copy of Cartesian gradient
+
         self._forces = self.params['coordinates'].get() * 0.
         
     def log_prob(self):
@@ -36,7 +38,7 @@ class BoltzmannEnsemble(Probability):
 
         return - self.beta * self.forcefield.energy(coords)
 
-    def gradient(self):
+    def update_forces(self):
 
         coords = self.params['coordinates'].get()
 
@@ -46,9 +48,9 @@ class BoltzmannEnsemble(Probability):
             coords, self._forces, self.forcefield.types, 1)
 
         self._forces *= -self.beta
-
-        return self._forces
         
+        self.params['forces']._value += self._forces
+
 class TsallisEnsemble(BoltzmannEnsemble):
 
     @property
@@ -101,10 +103,10 @@ class TsallisEnsemble(BoltzmannEnsemble):
             
             return - q / (q-1) * np.log(1 + (q-1) * (E-E_min)) - E_min
 
-    def gradient(self):
+    def update_forces(self):
 
         if self.q == 1.:
-            return super(TsallisEnsemble, self).gradient()
+            super(TsallisEnsemble, self).update_forces()
 
         else:
 
@@ -121,5 +123,6 @@ class TsallisEnsemble(BoltzmannEnsemble):
         
             self._forces *= f
 
-            return self._forces
+            self.params['forces']._value += self._forces
+
         

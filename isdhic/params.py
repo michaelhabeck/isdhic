@@ -99,6 +99,22 @@ class Coordinates(Parameter):
     def set(self, coords):
         self._value[...] = coords.reshape(-1,)
 
+class Forces(Parameter):
+    """Forces
+
+    Cartesian gradient
+    """
+    def __init__(self, universe, name='forces'):
+        
+        super(Forces, self).__init__(name)
+        self._value = np.ascontiguousarray(universe.forces.reshape(-1,))
+
+    def set(self, value):
+        if np.iterable(value):
+            self._value[...] = value.reshape(-1,)
+        else:
+            self._value[...] = value
+
 class Distances(Parameter):
     """Distances
 

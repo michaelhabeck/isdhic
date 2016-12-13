@@ -89,12 +89,12 @@ class Likelihood(Probability):
         """
         raise NotImplementedError
         
-    def update_forces(self, forces):
+    def update_forces(self):
         """
         Update Cartesian forces by applying the chain rule.
         """
         self.update_derivatives()
-        self.mock.update_forces(self.grad, forces)
+        self.mock.update_forces(self.grad, self.params['forces'].get())
             
 class Normal(Likelihood):
     """Normal
@@ -147,6 +147,12 @@ class Normal(Likelihood):
     def update_derivatives(self):
 
         self.grad[...] = self.tau * (self.data - self.mock.get())
+
+    def __str__(self):
+
+        s = super(Normal, self).__str__()
+
+        return s.replace(')', ', precision={0:0.3f})'.format(self.tau))
 
 class LowerUpper(Normal):
     """LowerUpper
@@ -223,12 +229,13 @@ class Logistic(Likelihood):
     def alpha(self, value):
         self._steepness.set(value)
     
-    def __init__(self, name, data, mock):
+    def __init__(self, name, data, mock, steepness=1.0):
 
         super(Logistic, self).__init__(name, data, mock)
 
         self._steepness = Scale(self.name + '.steepness')
-
+        self.alpha = steepness
+        
     def log_prob(self):
 
         from .logistic import log_prob
@@ -240,4 +247,11 @@ class Logistic(Likelihood):
         from .logistic import update_derivatives
 
         update_derivatives(self.data, self.mock.get(), self.grad, self.alpha)
+
+    def __str__(self):
+
+        s = super(Logistic, self).__str__()
+        s = s.replace(')', ', steepness={0:0.3f})'.format(self.alpha))
+        
+        return s
 

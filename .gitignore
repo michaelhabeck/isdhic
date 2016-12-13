@@ -1,0 +1,6 @@
+*~
+*pyc
+build/*
+dist/*
+isdhic.egg*
+isdhic/*.c
