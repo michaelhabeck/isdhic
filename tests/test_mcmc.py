@@ -9,6 +9,20 @@ from test_model import Gaussian
 from csb.numeric import log_sum_exp
 from csb.statistics import autocorrelation
 
+class AdaptiveWalk(mcmc.AdaptiveWalk):
+
+    stepsizes = []
+
+    @property
+    def stepsize(self):
+        return self._stepsize
+
+    @stepsize.setter
+    def stepsize(self, value):
+
+        self._stepsize = float(value)
+        AdaptiveWalk.stepsizes.append(self._stepsize)
+        
 n_steps = 1e3
 rate    = 0.2
 history = mcmc.History()
@@ -29,7 +43,7 @@ stepsize = 0.01
 n_steps  = 1e4
 burnin   = int(0.05*n_steps)
 
-sampler = mcmc.AdaptiveWalk(gaussian, gaussian._location, stepsize, adapt_until=burnin)
+sampler = AdaptiveWalk(gaussian, gaussian._location, stepsize, adapt_until=2*burnin)
 sampler.activate()
 sampler.run(1e4)
 
@@ -44,7 +58,7 @@ p = np.exp(p) / (x[1]-x[0])
 
 kw_hist = dict(normed=True, histtype='stepfilled', bins=50, color='k', alpha=0.3)
 
-fig, ax = plt.subplots(1,3,figsize=(12,4))
+fig, ax = plt.subplots(1,4,figsize=(12,3))
 
 ax[0].plot(y,color='k',alpha=0.3,lw=3)
 ax[0].set_xlabel('Monte Carlo iteration')
@@ -60,4 +74,11 @@ ax[2].axhline(0.,ls='--',color='r')
 ax[2].set_xlabel('Monte Carlo iteration')
 ax[2].set_ylabel('autocorrelation')
 
+ax[3].plot(AdaptiveWalk.stepsizes,color='k',alpha=0.3,lw=3)
+ax[3].axhline(sampler.stepsize,ls='--',color='r')
+ax[3].set_xlabel('Monte Carlo iteration')
+ax[3].set_ylabel('stepsize')
+ax[3].semilogy()
+
 fig.tight_layout()
+
