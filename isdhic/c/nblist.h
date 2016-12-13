@@ -4,6 +4,10 @@
 #define MAX_NO_NEIGHBORS  13     /* maximal number of neighbor cells in
 				    a cubic grid */
 
+#define INDEX(i, j, k, n) (n * (n * i + j) + k)
+
+#define BOX_MARGIN 1e-5
+
 typedef struct _Cell {
 
   int id;                  /* every cell has a unique id */

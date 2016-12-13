@@ -1,5 +1,5 @@
-#ifndef __ISD_H__
-#define __ISD_H__
+#ifndef __ISDHIC_H__
+#define __ISDHIC_H__
 
 #ifdef __cplusplus
  extern "C" {
@@ -7,33 +7,23 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include "mathutils.h"
-#include "nblist.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "mathutils.h"
+#include "nblist.h"
+
 #define RAISE(a,b,c) {PyErr_SetString(a, b); return c;}
 #define HERE {printf("%s: %d\n",__FILE__,__LINE__);}
 #define MALLOC(n, t) ((t*) malloc((n) * sizeof(t)))
-#define REALLOC(p, n, t) ((t*) realloc((void*) (p), (n) * sizeof(t)))
-#define MEMCPY(a,b,n,t) memcpy((void*) (a), (void*) (b), (n) * sizeof(t))
 #define RETURN_PY_NONE {Py_INCREF(Py_None);return Py_None;}
-#define INC_AND_RETURN(a) {Py_INCREF((PyObject*) (a)); return (PyObject*) (a);}
-
-/* TODO: change to SET_PYOBJECT(dest, src); that's more standard */
-
-#define SET_PYOBJECT(op, dest) {if (dest) Py_DECREF(dest); if (op) Py_INCREF(op); dest = (op);}
 
 typedef double (*forcefield_energyfunc) (PyObject*, PyObject*);
 typedef int (*forcefield_gradientfunc) (PyObject*, PyObject*, double *);
 
 typedef double (*forcefield_energyterm) (PyObject*, double, double, double);
 typedef double (*forcefield_gradenergyterm) (PyObject*, double, double, double, double *);
-
-#define PyPriorObject_HEAD \
-        PyObject_HEAD \
-        int id, enabled;
 
 #define PyForceFieldObject_HEAD \
         PyObject_HEAD \
@@ -48,35 +38,7 @@ typedef double (*forcefield_gradenergyterm) (PyObject*, double, double, double, 
 	forcefield_energyfunc   energy; \
         forcefield_gradientfunc gradient;
 
-#define PyDatumObject_HEAD \
-        PyObject_HEAD \
-	int serial; \
-        double value;
-
-typedef struct {
-  PyPriorObject_HEAD
-} PyPriorObject;
-
-// Universe: container for all particles
-
-typedef struct _PyUniverseObject {
-
-  PyObject_HEAD
-
-  int n_particles;
-
-  // Cartesian coordinates and gradient
-
-  PyArrayObject *coords;
-  PyArrayObject *forces;
-
-} PyUniverseObject;
-
-PyObject * PyUniverse_New(PyObject *self, PyObject *args);
-
-extern PyTypeObject PyUniverse_Type;
-
-   /* Force field */
+/* Force fields */
 
 typedef struct {
   PyForceFieldObject_HEAD
@@ -113,17 +75,6 @@ double     forcefield_gradient(PyForceFieldObject *self, double *coords, double 
 
 PyObject * PyProlsq_New(PyObject *self, PyObject *args);
 PyObject * PyRosetta_New(PyObject *self, PyObject *args);
-
-#define PI 3.141592653589793115997963468544
-#define TWO_PI 6.283185307179586231995926937088
-#define MAX_EXP 709.
-#define MIN_EXP -709.
-#define INDEX(i, j, k, n) (n * (n * i + j) + k)
-#define BOX_MARGIN 1e-5
-#define SET_PYARRAY(dest, op) {if (dest) Py_DECREF(dest); if (op == Py_None) dest = NULL; else {Py_INCREF(op); dest = (PyArrayObject*) (op);}}
-#define CREATE_ARRAY(x, t, n, initialize) {int i;if (x) free(x); x = (t*) malloc((n) * sizeof(t)); if (initialize) for (i=0; i<n; i++) x[i] = 0.;}
-
-#include "boltzmann.h"
 
 #ifdef __cplusplus
  }

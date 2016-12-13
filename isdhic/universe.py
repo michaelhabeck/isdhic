@@ -1,8 +1,5 @@
 import numpy as np
 
-from ._isdhic import universe
-from .core import ctypeproperty
-
 from csb.core import validatedproperty
 
 class Particle(object):
@@ -57,26 +54,26 @@ class Universe(object):
     Container for all particles that make up a molecular system. Gives access
     to the forces and coordinates of all particles. 
     """
-    @ctypeproperty(int)
-    def n_particles():
+    @property
+    def n_particles(self):
         """
         Number of particles.
         """
-        pass
+        return len(self._coords)
 
-    @ctypeproperty(np.array)
-    def coords():
+    @property
+    def coords(self):
         """
         Cartesian coordinates.
         """
-        pass
+        return self._coords
 
-    @ctypeproperty(np.array)
-    def forces():
+    @property
+    def forces(self):
         """
         Gradient with respect to Cartesian coordinates.
         """
-        pass
+        return self._forces
 
     def __init__(self, n_particles):
         """Universe
@@ -84,9 +81,8 @@ class Universe(object):
         Initialize Universe by specifying the number of particles contained
         in the universe.
         """
-        self.ctype  = universe(n_particles)
-        self.coords = np.zeros((n_particles,3))
-        self.forces = np.zeros((n_particles,3))
+        self._coords = np.zeros((n_particles,3))
+        self._forces = np.zeros((n_particles,3))
 
         Particle.set_coords(self.coords)
 

@@ -18,7 +18,7 @@ print forcefield.energy(coords),
 E = forcefield.ctype.update_gradient(coords, universe.forces, forcefield.types, 1)
 print E
 
-a = forcefield.update_gradient(universe).flatten().copy()
+a = universe.forces.flatten()
 
 msg = 'eps={0:.0e}, norm={1:.2e}, corr={2:.1f}'
 

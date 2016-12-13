@@ -35,14 +35,11 @@ module = Extension('isdhic._isdhic',
                       include_dirs = [numpy.get_include(), './isdhic/c'],
                       extra_compile_args = ['-Wno-cpp'],
                       sources = ['./isdhic/c/_isdhicmodule.c',
-                                 './isdhic/c/universe.c',
                                  './isdhic/c/mathutils.c',
                                  './isdhic/c/forcefield.c',
                                  './isdhic/c/prolsq.c',
                                  './isdhic/c/nblist.c',
                                  './isdhic/c/rosetta.c', 
-                                 './isdhic/c/boltzmann.c',
-                                 './isdhic/c/tsallis.c',
                                  ])
 
 os.environ['CFLAGS'] = '-Wno-cpp'

@@ -64,15 +64,6 @@ class Forcefield(Nominable, CWrapper):
 
         return self.ctype.energy(coords.reshape(-1,3), self.types)
 
-    def update_gradient(self, universe, update=True):
-
-        ctype = self.ctype
-        c_univ = universe.ctype
-        
-        if update: ctype.nblist.update(universe.coords,1)
-
-        return c_univ.forces
-
     def __str__(self):
         s = '{0}(n_types={1:.2f})'
         
