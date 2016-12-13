@@ -9,6 +9,46 @@ import numpy as np
 
 from isdhic.core import take_time
 
+class PosteriorCoordinates(isdhic.Probability):
+
+    def __init__(self, name, likelihoods=None, priors=None):
+
+        super(PosteriorCoordinates, self).__init__(name)
+
+        self.likelihoods = likelihoods or ()
+        self.priors = priors or ()
+
+    def log_prob(self):
+
+        log_p = 0.
+        
+        for prior in self.priors:
+            log_p += prior.log_prob()
+
+        for model in self.likelihoods:
+            model.mock.update()
+            log_p += model.log_prob()
+
+        return log_p
+
+    def update_forces(self, forces):
+
+        ## TODO: assuming that there is only a single prior
+
+        forces[...] = self.priors[0].gradient()
+
+        for model in self.likelihoods:
+            model.mock.update()
+            model.update_forces(forces)
+
+def report_log_prob(a, b):
+    out = '  log_prob (isdhic / isd) = {0:0.5e} / {1:0.5e}\n'
+    print out.format(a,b)
+        
+def report_gradient(a, b):
+    print '  max discrepancy={0:.3e}, corr={1:.1f}'.format(
+        np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
+
 ## generate posterior with isd
 
 path   = os.path.expanduser('~/projects/hic2/py')
@@ -65,18 +105,18 @@ lowerupper.tau = L_bbone.error_model.k
 print '\n--- testing Tsallis ensemble ---\n'
 
 with take_time('calculating energy with isdhic'):
-    a = -tsallis.log_prob()
+    a = tsallis.log_prob()
 with take_time('calculating energy with isd'):
     b = posterior.torsion_posterior.energy(coords.get())
-print '  results={0:0.5e}, {1:0.5e}\n'.format(a,b)
+
+report_log_prob(a,-b)
 
 with take_time('calculating forces with isdhic'):
-    a = -tsallis.gradient()
+    a = tsallis.gradient()
 with take_time('calculating forces with isd'):
     b = posterior.torsion_posterior.gradient(coords.get())
 
-print '  max discrepancy={0:.3e}, coor={1:.1f}'.format(
-    np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
+report_gradient(a,-b)
 
 ## logistic likelihood only
 
@@ -89,8 +129,9 @@ with take_time('evaluating logistic likelihood with isdhic'):
     a = logistic.log_prob()
 with take_time('evaluating logistic likelihood with isd'):
     L.fill_mock_data()
-    b = -L.error_model.energy(L)
-print '  results={0:0.5e}, {1:0.5e}\n'.format(a,b)
+    b = L.error_model.energy(L)
+
+report_log_prob(a,-b)
 
 a = np.ascontiguousarray(universe.forces.reshape(-1,))
 a[...] = 0.
@@ -101,9 +142,7 @@ with take_time('calculating forces with isdhic'):
 with take_time('calculating forces with isd'):
     b = posterior.torsion_posterior.gradient(coords.get())
 
-b *= -1
-print '  max discrepancy={0:.3e}, coor={1:.1f}'.format(
-    np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
+report_gradient(a,-b)
 
 ## lowerupper likelihood only
 
@@ -116,8 +155,9 @@ with take_time('evaluating lowerupper model with isdhic'):
     a = lowerupper.log_prob()
 with take_time('evaluating lowerupper model with isd'):
     L_bbone.fill_mock_data()
-    b = -L_bbone.error_model.energy(L_bbone)
-print '  results={0:0.5e}, {1:0.5e}\n'.format(a,b)
+    b = L_bbone.error_model.energy(L_bbone)
+
+report_log_prob(a,-b)
 
 a = np.ascontiguousarray(universe.forces.reshape(-1,))
 a[...] = 0.
@@ -128,9 +168,7 @@ with take_time('calculating forces with isdhic'):
 with take_time('calculating forces with isd'):
     b = posterior.torsion_posterior.gradient(coords.get())
 
-b *= -1
-print '  max discrepancy={0:.3e}, coor={1:.1f}'.format(
-    np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
+report_gradient(a,-b)
 
 ## full posterior
 
@@ -148,8 +186,7 @@ with take_time('evaluating posterior with isdhic'):
 with take_time('evaluating posterior with isd'):
     b = posterior.torsion_posterior.energy(coords.get())
 
-b *= -1
-print '  results={0:0.5e}, {1:0.5e}\n'.format(a,b)
+report_log_prob(a,-b)
 
 with take_time('calculating forces with isdhic'):
 
@@ -162,7 +199,24 @@ with take_time('calculating forces with isdhic'):
 with take_time('calculating forces with isd'):
     b = posterior.torsion_posterior.gradient(coords.get())
 
-b *= -1
-print '  max discrepancy={0:.3e}, coor={1:.1f}'.format(
-    np.fabs(a-b).max(), np.corrcoef(a,b)[0,1]*100)
+report_gradient(a,-b)
 
+## testing conditional posterior over conformational degrees of freedom
+
+print '\n--- testing conditional posterior ---\n'
+
+p_coords = PosteriorCoordinates('Pr(x|D)', (lowerupper, logistic), (tsallis,))
+
+with take_time('evaluating log probibility of {}'.format(p_coords)):
+    lgp = p_coords.log_prob()
+print '  log_prob={0:.5e}'.format(lgp)
+
+a = a.copy()
+
+forces = np.ascontiguousarray(universe.forces.reshape(-1,))
+forces[...] = 0.
+
+with take_time('\nevaluating forces of {}'.format(p_coords)):
+   p_coords.update_forces(forces)
+
+report_gradient(forces, a)
