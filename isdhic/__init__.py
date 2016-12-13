@@ -3,5 +3,5 @@ from .nblist import NBList
 from .forcefield import ForcefieldFactory
 from .params import Location, Precision, Scale, Coordinates, Distances
 from .params import ModelDistances, Parameters
-from .model import Probability
+from .model import Probability, Likelihood, Normal, LowerUpper, Logistic
 from .prior import BoltzmannEnsemble, TsallisEnsemble

@@ -18,19 +18,14 @@ def log_prob(x, prior):
 
 if __name__ == '__main__':
 
-    n_particles  = int(1e3)
-    diameter     = 4.
-
     params       = isdhic.Parameters()
     isdhic.Probability.set_params(params)
 
-    universe     = isdhic.Universe(n_particles)
+    universe     = utils.create_universe(n_particles=1e3, diameter=4.)
     coords       = isdhic.Coordinates(universe)
     forcefield   = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
 
     for param in (coords,): params.add(param)
-
-    coords.set(utils.randomwalk(n_particles) * diameter)
 
     boltzmann = isdhic.BoltzmannEnsemble('boltzmann',forcefield)
     tsallis   = isdhic.TsallisEnsemble('tsallis',forcefield)
@@ -56,6 +51,6 @@ if __name__ == '__main__':
         b = optimize.approx_fprime(x, f, eps)
 
         cc = np.corrcoef(a,b)[0,1] * 100
-        d_max = np.max(np.fabs(a-b))# / (np.fabs(a) + 1e-300))
+        d_max = np.max(np.fabs(a-b))x
         
         print out.format(d_max, cc)

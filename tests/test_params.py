@@ -32,7 +32,7 @@ if __name__ == '__main__':
     n_particles  = int(1e4)-1
     n_distances  = 10000
     diameter     = 4.
-    universe     = isdhic.Universe(n_particles)
+    universe     = utils.create_universe(n_particles, diameter)
 
     precision    = isdhic.Precision('lowerupper')
     coords       = isdhic.Coordinates(universe)
@@ -46,8 +46,6 @@ if __name__ == '__main__':
 
     for param in (precision, coords, distances):
         params.add(param)
-
-    coords.set(utils.randomwalk(n_particles) * diameter)
 
     print 'Getting/setting of Cartesian coordinates works? -',
     print np.fabs(universe.coords.flatten()-coords.get()).max() < 1e-10

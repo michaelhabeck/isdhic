@@ -1,22 +1,53 @@
 import os
 import time
+import isdhic
 import tempfile
 import numpy as np
 
 from csb.bio import structure
 
-def randomwalk(n_beads):
+def randomwalk(n_steps, dim=3):
     """
-    Create a 3d random walk
+    Generate a random walk in n-dimensional space by making steps of
+    fixed size (unit length) and uniformly chosen direction.
+
+    Parameters
+    ----------
+
+    n_steps :
+      length of random walk, i.e. number of steps
+
+    dim:
+      dimension of embedding space (default: dim=3)
     """
     ## generate isotropically distributed bond vectors of
     ## unit length
     
-    bonds = np.random.standard_normal((n_beads,3))
+    bonds = np.random.standard_normal((int(n_steps),int(dim)))
     norms = np.sum(bonds**2,1)**0.5
     bonds = (bonds.T / norms).T
 
     return np.add.accumulate(bonds,0)
+
+def create_universe(n_particles=1, diameter=1):
+    """
+    Create a universe containing 'n_particles' Particles of
+    given diameter. The coordinates of the particles follow
+    a random walk in 3d space.
+
+    Parameters
+    ----------
+
+    n_particles : non-negative number
+      number of particles contained in universe
+
+    diameter : non-negative float
+      particle diameter
+    """
+    universe = isdhic.Universe(int(n_particles))
+    universe.coords[...] = randomwalk(n_particles) * diameter
+
+    return universe
 
 def make_chain(coordinates, sequence=None, chainid='A'):
     """
@@ -95,7 +126,10 @@ class Viewer(object):
         if cleanup: os.unlink(tmpfile)
 
 class ChainViewer(Viewer):
+    """ChainViewer
 
+    Specialized viewer for visualizing chain molecules. 
+    """
     def __init__(self):
 
         super(ChainViewer, self).__init__('pymol')

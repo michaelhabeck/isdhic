@@ -98,7 +98,7 @@ class Coordinates(Parameter):
 
     def set(self, coords):
         self._value[...] = coords.reshape(-1,)
-        
+
 class Distances(Parameter):
     """Distances
 
@@ -192,6 +192,20 @@ class ModelDistances(Distances):
                   self.first_index,
                   self.second_index,
                   self._value)
+
+    def update_forces(self, derivatives, forces):
+        """
+        Computes the Cartesian gradient assuming that an instance of
+        'Distances' is passed as the dataset
+        """
+        from .distance import update_forces
+
+        update_forces(self._coords.get(),
+                      self.first_index,
+                      self.second_index,
+                      self._value,
+                      derivatives,
+                      forces)
 
 class Parameters(object):
     """Parameters

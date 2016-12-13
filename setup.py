@@ -54,7 +54,7 @@ setup(
     long_description=DESCRIPTION,
     license=LICENSE,
     requires=REQUIRES,
-    ext_modules=[module] + cythonize("isdhic/distan*.pyx"), 
+    ext_modules=[module] + cythonize("isdhic/*.pyx"), 
     include_dirs = [numpy.get_include(), './isdhic/c'],
     cmdclass={'build_ext': build_ext},
     classifiers=(
