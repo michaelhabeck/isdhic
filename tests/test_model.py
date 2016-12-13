@@ -1,4 +1,5 @@
 import isdhic
+import numpy as np
 
 from isdhic import Probability
 
