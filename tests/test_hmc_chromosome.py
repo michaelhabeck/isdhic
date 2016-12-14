@@ -24,20 +24,21 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
         result = super(HamiltonianMonteCarlo, self).sample()
 
-        if len(self.history) and not len(self.history) % 10:
-            print '{0}, stepsize = {1:.3e}'.format(self.history, self.stepsize)
+        if len(self.history) and not len(self.history) % 20:
+            print '{0}, stepsize = {1:.3e}, log_prob = {2:.3e}'.format(
+                self.history, self.stepsize, self.samples[-1].potential_energy)
 
         return result
 
 if __name__ == '__main__':
 
-    filename = './chrX_cell1_500kb.py'
-    filename = './chrX_cell1_50kb.py'
+    resolution = 500 ## Kb
+    filename   = './chrX_cell1_{0}kb.py'.format(resolution)
 
     with open(filename) as script:
         exec script
 
-    if False:
+    if not False:
 
         extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
         coords.set(extended)
@@ -54,7 +55,7 @@ if __name__ == '__main__':
 
     X = np.array([state.positions for state in hmc.samples]).reshape(len(hmc.samples),-1,3)
     E = np.array([state.potential_energy for state in hmc.samples])
-
+    K = np.array([state.kinetic_energy for state in hmc.samples])
     E2 = np.array(map(hmc.leapfrog.hamiltonian.potential_energy, X))
 
     print hmc.history, hmc.stepsize
@@ -77,13 +78,14 @@ if False:
     prior = posterior.priors[0]
     E_isd = utils.Load('/tmp/E')
 
-    backbone, contacts = posterior.likelihoods
-
     X = E_isd.torsion_angles.copy()
+
+    backbone, contacts, rog = posterior.likelihoods
 
     E_prior = []
     E_bbone = []
     E_intra = []
+    E_rog   = []
     
     for x in X:
 
@@ -93,10 +95,12 @@ if False:
         E_prior.append(-prior.log_prob())
         E_bbone.append(-backbone.log_prob())
         E_intra.append(-contacts.log_prob())
+        E_rog.append(-rog.log_prob())
         
     E_prior = np.array(E_prior)
     E_bbone = np.array(E_bbone)
     E_intra = np.array(E_intra)
+    E_rog   = np.array(E_rog)
     
 if False:
 

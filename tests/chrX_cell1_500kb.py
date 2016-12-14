@@ -12,6 +12,10 @@ factor       = 1.5
 diameter     = 4.
 filename     = '../data/GSM1173493_cell-1.txt'
 k_backbone   = 250.
+n_rog        = 10
+mu_rog       = 3.7e3 / (2.58 * 107.5)
+sigma_rog    = 0.3e3 / (2.58 * 107.5)
+tau_rog      = n_rog / sigma_rog**2
 
 parser       = isdhic.HiCParser(filename, 'X', 'X')
 datasets     = parser.parse()
@@ -33,6 +37,9 @@ forces     = simulation.params['forces']
 
 for model in posterior.likelihoods:
     print model
+
+model.data[0] = mu_rog
+model.tau     = tau_rog
 
 if False:
 
