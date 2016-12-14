@@ -20,6 +20,16 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
         self.leapfrog.stepsize = float(value)
         HamiltonianMonteCarlo.stepsizes.append(self.leapfrog.stepsize)
 
+    def sample(self):
+
+        result = super(HamiltonianMonteCarlo, self).sample()
+
+        if len(self.samples) and not len(self.samples) % 10:
+            print '{0}, stepsize = {1:.3e}, accept = {2}'.format(
+                self.history, self.stepsize, result[1])
+
+        return result
+
 if __name__ == '__main__':
 
     filename = './chrX_cell1_500kb.py'

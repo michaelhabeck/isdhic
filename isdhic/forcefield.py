@@ -58,11 +58,21 @@ class Forcefield(Nominable, CWrapper):
     def disable(self):
         self.enable(0)
 
+    def update_list(self, coords):
+        """
+        Update neighbor list.
+        """
+        self.ctype.nblist.update(coords.reshape(-1,3),1)
+        
     def energy(self, coords, update=True):
 
-        if update: self.ctype.nblist.update(coords.reshape(-1,3),1)
+        if update: self.update_list(coords)
 
         return self.ctype.energy(coords.reshape(-1,3), self.types)
+
+    def update_gradient(self, coords, forces):
+
+        self.ctype.update_gradient(coords, forces, self.types, 1)
 
     def __str__(self):
         s = '{0}(n_types={1:.2f})'

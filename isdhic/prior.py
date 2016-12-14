@@ -44,8 +44,8 @@ class BoltzmannEnsemble(Probability):
 
         self._forces[...] = 0.
 
-        self.forcefield.ctype.update_gradient(\
-            coords, self._forces, self.forcefield.types, 1)
+        self.forcefield.update_list(coords)        
+        self.forcefield.update_gradient(coords, self._forces)
 
         self._forces *= -self.beta
         

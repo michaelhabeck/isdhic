@@ -51,17 +51,14 @@ class MetropolisHastings(object):
         """
         Create a state from current parameter settings.
         """
-        value   = self.parameter.get()
-        logprob = self.model.log_prob()
-
-        return State(value, logprob)
+        return State(self.parameter.get(), self.model.log_prob())
 
     def store_state(self, state=None):
 
         self.samples.append(state or self.create_state())
 
-    def accept(self, proposed_state, current_state):
-        diff = proposed_state.log_prob - current_state.log_prob
+    def accept(self, candidate, current):
+        diff = candidate.log_prob - current.log_prob
         return np.log(np.random.random()) < diff
 
     def propose(self, state):
@@ -140,9 +137,9 @@ class AdaptiveWalk(RandomWalk):
 
         self.deactivate()
 
-    def accept(self, proposed_state, current_state):
+    def accept(self, candidate, current):
 
-        accept = super(AdaptiveWalk, self).accept(proposed_state, current_state)
+        accept = super(AdaptiveWalk, self).accept(candidate, current)
 
         if len(self.samples) >= self.adapt_until: self.deactivate()
 

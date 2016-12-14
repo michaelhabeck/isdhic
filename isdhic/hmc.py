@@ -26,7 +26,7 @@ class Hamiltonian(object):
         self.set_coords(q)
         self.model.update_forces()
         
-        return -self.model.params['forces'].get()
+        return -self.model.params['forces'].get().copy()
 
     def sample_momenta(self, q):
         
@@ -116,6 +116,7 @@ class HamiltonianMonteCarlo(AdaptiveWalk):
         Creates a state from current configuration and generates
         random momenta.
         """
+        print 'create_state called'
         hamiltonian = self.leapfrog.hamiltonian        
         positions   = self.parameter.get().copy()
         momenta     = hamiltonian.sample_momenta(positions)        
@@ -133,12 +134,13 @@ class HamiltonianMonteCarlo(AdaptiveWalk):
         hamiltonian = self.leapfrog.hamiltonian
 
         ## resample momenta
-
-        q, _ = state.value
-        p    = hamiltonian.sample_momenta(q)
+        
+        q = state.positions
+        p = hamiltonian.sample_momenta(q)
 
         state.kinetic_energy = hamiltonian.kinetic_energy(p)
-        
+        state.momenta = p
+
         Q, P = self.leapfrog.run(q.copy(), p.copy())
 
         V = hamiltonian.potential_energy(Q)
