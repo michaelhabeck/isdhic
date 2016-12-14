@@ -33,7 +33,7 @@ class History(object):
 
 class State(object):
 
-    def __init__(self, value, log_prob=None):
+    def __init__(self, value, log_prob):
 
         self.value = value if not np.iterable(value) else value.copy()
         self.log_prob = log_prob
@@ -47,43 +47,43 @@ class MetropolisHastings(object):
         self.parameter = parameter
         self.samples   = []
         
+    def create_state(self):
+        """
+        Create a state from current parameter settings.
+        """
+        value   = self.parameter.get()
+        logprob = self.model.log_prob()
+
+        return State(value, logprob)
+
+    def store_state(self, state=None):
+
+        self.samples.append(state or self.create_state())
+
+    def accept(self, proposed_state, current_state):
+        diff = proposed_state.log_prob - current_state.log_prob
+        return np.log(np.random.random()) < diff
+
     def propose(self, state):
         """
         Generates a new state from a given input state
         """
         raise NotImplementedError
 
-    def accept(self, proposed_state, current_state):
-        dlgp = proposed_state.log_prob - current_state.log_prob
-        return np.log(np.random.random()) < dlgp
-
     def sample(self):
         """
         Proposes a new value for the parameter which is accepted or
-        rejected according to the Metropolis criterion. Returns a
-        flag indicating whether the proposed state was accepted or not.
+        rejected according to the Metropolis criterion. Returns the
+        new state and a flag indicating if the proposed state was
+        accepted or not.
         """
-        current  = self.samples[-1]
-        proposal = self.propose(current)
+        current   = self.samples[-1]
+        candidate = self.propose(current)
         
-        self.parameter.set(proposal.value)
-        proposal.log_prob = self.model.log_prob()
-        
-        if self.accept(proposal, current):
-            return proposal, True
+        if self.accept(candidate, current):
+            return candidate, True
         else:
-            self.parameter.set(current.value)
             return current, False
-
-    def store_state(self, state=None):
-
-        if state is None:
-            
-            value   = self.parameter.get()
-            logprob = self.model.log_prob()
-            state   = State(value, logprob)
-            
-        self.samples.append(state)
 
     def run(self, n_steps):
         """
@@ -111,10 +111,12 @@ class RandomWalk(MetropolisHastings):
 
     def propose(self, state):
 
-        proposal = deepcopy(state)
-        proposal.value += self.stepsize * np.random.uniform(-1.,+1.,np.shape(proposal.value))
+        x = state.value
+        y = x + self.stepsize * np.random.uniform(-1.,+1.,np.shape(x))
 
-        return proposal
+        self.parameter.set(y)
+
+        return self.create_state()
         
 class AdaptiveWalk(RandomWalk):
 

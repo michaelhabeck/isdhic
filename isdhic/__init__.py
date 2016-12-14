@@ -7,3 +7,5 @@ from .model import Probability, Likelihood, Normal, LowerUpper, Logistic
 from .prior import BoltzmannEnsemble, TsallisEnsemble
 from .posterior import ConditionalPosterior, PosteriorCoordinates
 from .data import HiCData, HiCParser
+from .hmc import HamiltonianMonteCarlo
+from .mcmc import RandomWalk, AdaptiveWalk
