@@ -1,5 +1,5 @@
 """
-Parser for various data.
+Parser for various Hi-C data.
 """
 import numpy as np
 
@@ -66,9 +66,42 @@ class HiCData(object):
         self.__init__((np.array(self.data) * scale).astype('i'))
 
 class HiCParser(object):
+    """HiCParser
 
+    Parser for text files storing HiC contact data. The parser assumes
+    that the format is
+
+    <chr1>[tab]<coord1>[tab]<chr2>[tab]<coord2>
+    ...
+
+    The first line is assumed to be a header and is skipped. The parser
+    focus on specific trans- and cis-contacts as specified in the
+    constructor of the parser.
+    """
     def __init__(self, filename, chromosome1=None, chromosome2=None):
+        """HiCParser
 
+        Instantiates a parser for HiC text files. By specifying one or
+        two names of chromosomes whose data will be parsed, we can restrict
+        the parsing to trans- and cis-chromosomal contacts. If both
+        arguments are 'None', all contacts are read. If 'chromosome1'
+        is specified and chromosome2 is 'None', all contacts between a
+        locus on the chosen chromosome and all other chromosomes will be
+        read. 
+
+        Parameters
+        ----------
+
+        filename :
+          name of the file storing the HiC contact data
+
+        chromosome1 :
+          optional selector for the first chromosome
+
+        chromosome2:
+          optional string selecting the second interaction partner
+
+        """
         self.filename    = filename
         self.chromosome1 = chromosome1
         self.chromosome2 = chromosome2

@@ -1,3 +1,6 @@
+"""
+Core classes and functions. 
+"""
 import time
 import contextlib
 

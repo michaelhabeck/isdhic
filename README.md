@@ -18,9 +18,16 @@ sudo python setup.py install
 
 ### Dependencies ###
 
-* numpy
-* scipy
-* csb
+* numpy: [download](https://pypi.python.org/pypi/numpy)
+
+* scipy: [download](https://pypi.python.org/pypi/scipy)
+
+* csb:   [download](https://pypi.python.org/pypi/csb)
+
+Install with
+```
+pip install numpy scipy csb
+```
 
 optional
 

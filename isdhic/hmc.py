@@ -116,7 +116,6 @@ class HamiltonianMonteCarlo(AdaptiveWalk):
         Creates a state from current configuration and generates
         random momenta.
         """
-        print 'create_state called'
         hamiltonian = self.leapfrog.hamiltonian        
         positions   = self.parameter.get().copy()
         momenta     = hamiltonian.sample_momenta(positions)        

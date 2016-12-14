@@ -1,6 +1,10 @@
 """
-Non-bonded force fields: PROLSQ uses a quartic repulsion term to penalize
-particle-particle clashses. ROSETTA is a ramped Lennard-Jones potential.
+Non-bonded force fields.
+
+PROLSQ uses a quartic repulsion term to penalize particle-particle
+clashses.
+
+ROSETTA is a ramped Lennard-Jones potential.
 """
 import numpy as np
 
@@ -75,6 +79,7 @@ class Forcefield(Nominable, CWrapper):
         self.ctype.update_gradient(coords, forces, self.types, 1)
 
     def __str__(self):
+
         s = '{0}(n_types={1:.2f})'
         
         return s.format(self.__class__.__name__, self.n_types)

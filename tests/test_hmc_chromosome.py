@@ -32,19 +32,24 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
 if __name__ == '__main__':
 
+    pymol = utils.ChainViewer()
+
+    ## set up X chromosome simulation at 500 kb / 50 kb resolution
+
     resolution = 500 ## Kb
     filename   = './chrX_cell1_{0}kb.py'.format(resolution)
 
     with open(filename) as script:
         exec script
 
-    if not False:
+    ## start from stretched out chromosome structure
 
-        extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
-        coords.set(extended)
+    extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
+    coords.set(extended)
+
+    ## use Hamiltonian Monte Carlo generate X chromosome structures
+    ## from the posterior distribution
     
-    pymol = utils.ChainViewer()
-
     hmc = HamiltonianMonteCarlo(posterior,stepsize=1e-3)
     hmc.leapfrog.n_steps = 100
     hmc.adapt_until      = int(1e6)
@@ -56,9 +61,6 @@ if __name__ == '__main__':
     X = np.array([state.positions for state in hmc.samples]).reshape(len(hmc.samples),-1,3)
     E = np.array([state.potential_energy for state in hmc.samples])
     K = np.array([state.kinetic_energy for state in hmc.samples])
-    E2 = np.array(map(hmc.leapfrog.hamiltonian.potential_energy, X))
-
-    print hmc.history, hmc.stepsize
 
 if False:
 
