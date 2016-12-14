@@ -2,7 +2,7 @@ from .universe import Universe, Particle
 from .nblist import NBList    
 from .forcefield import ForcefieldFactory
 from .params import Location, Precision, Scale, Coordinates, Distances
-from .params import ModelDistances, Parameters, Forces
+from .params import ModelDistances, Parameters, Forces, RadiusOfGyration
 from .model import Probability, Likelihood, Normal, LowerUpper, Logistic
 from .prior import BoltzmannEnsemble, TsallisEnsemble
 from .posterior import ConditionalPosterior, PosteriorCoordinates

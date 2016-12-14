@@ -90,6 +90,14 @@ class ChromosomeSimulation(object):
 
         return logistic
 
+    def create_radius_of_gyration(self, Rg=0.):
+
+        coords = self.params['coordinates']
+        radius = isdhic.RadiusOfGyration(coords)
+        normal = isdhic.Normal(radius.name, np.array([Rg]), radius)
+
+        return normal
+
     def create_chromosome(self, contacts):
 
         self.create_universe()
@@ -98,29 +106,13 @@ class ChromosomeSimulation(object):
         priors = (self.create_prior(),)
 
         likelihoods = (self.create_chain(),
-                       self.create_contacts(contacts))
+                       self.create_contacts(contacts),
+                       self.create_radius_of_gyration())
 
         posterior = isdhic.PosteriorCoordinates(
             'posterior_xyz', likelihoods=likelihoods, priors=priors)
 
         return posterior
-
-    ## def make_rgyr(self, posterior):
-
-    ##     L = isd.Likelihood('Rg')
-    ##     L.data = isd.DataSet([isd.Datum(0.)])
-    ##     L.theory = isd.RadiusOfGyration(L.name)
-    ##     L.error_model = isd.NormalErrorModel()
-    ##     L.error_model.k = 1.
-    ##     L.error_model.sampler.update_k = 0
-
-    ##     _, B = isd.create_prior(L, isd.PRIOR_FLAT, isd.PRIOR_JEFFREYS)
-    ##     posterior.add_likelihood(L)
-    ##     posterior.add_error_model_prior(B)
-
-    ##     posterior.link_parameters()
-
-    ##     return L
 
 if __name__ == '__main__':
 
@@ -141,7 +133,7 @@ if __name__ == '__main__':
 
     print '\n--- testing conditional posterior ---\n'
 
-    with take_time('evaluating log probibility of {}'.format(posterior_x)):
+    with take_time('evaluating log probability of {}'.format(posterior_x)):
         a = posterior_x.log_prob()
 
     with take_time('evaluating posterior with isd'):

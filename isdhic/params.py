@@ -223,6 +223,49 @@ class ModelDistances(Distances):
                       derivatives,
                       forces)
 
+class RadiusOfGyration(Parameter):
+
+    def __init__(self, coords, name='Rgyr'):
+        """RadiusOfGyration
+
+        Mean distance from center of mass
+
+        Parameters
+        ----------
+
+        coords : 
+          instance of the Coordinates class
+        """
+        super(RadiusOfGyration, self).__init__(name)
+
+        self._coords = coords
+
+    def set_default(self):
+        self.set(0.)
+
+    def set(self, value):
+        value = float(value)
+        if value < 0.:
+            msg = '{} must be non-negative'
+            raise ValueError(msg.format(self.__class__.__name__))
+
+        self._value = value
+        
+    def update(self):
+
+        coords = self._coords.get().reshape(-1,3)
+        Rg = np.mean(np.sum((coords - coords.mean(0))**2,1))**0.5
+
+        self.set(Rg)
+
+    def update_forces(self, derivatives, forces):
+
+        x = self._coords.get().reshape(-1,3)
+
+        grad = derivatives[0] * (x - x.mean(0)) / self.get() / len(x)
+
+        forces += grad.reshape(forces.shape)
+
 class Parameters(object):
     """Parameters
 
@@ -264,3 +307,4 @@ class Parameters(object):
     def __getitem__(self, name):
 
         return self._params[name]
+

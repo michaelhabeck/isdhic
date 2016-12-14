@@ -41,7 +41,7 @@ if __name__ == '__main__':
     contacts     = isdhic.ModelDistances(coords, pairs, 'contacts')
     chain        = isdhic.ModelDistances(coords, connectivity, 'chain')
     distances    = isdhic.ModelDistances(coords, connectivity + pairs, 'all')
-    
+
     params = isdhic.Parameters()
 
     for param in (precision, coords, distances):

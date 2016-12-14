@@ -28,9 +28,7 @@ def create_isd_posterior(run='geo_rosetta_contacts_Rg'):
     if not path in sys.path: sys.path.insert(0, path)
 
     with open(script) as f:
-
         exec f.read()
-        posterior.likelihoods['Rg'].enabled = 0
 
     os.chdir(cwd)
 
@@ -42,6 +40,7 @@ if __name__ == '__main__':
     
     L_intra  = posterior.likelihoods['contacts']
     L_bbone  = posterior.likelihoods['backbone']
+    L_rog    = posterior.likelihoods['Rg']
     prior    = posterior.conformational_priors['tsallis_prior']
     beadsize = L_bbone.data.values[0]
     
@@ -69,6 +68,9 @@ if __name__ == '__main__':
                                      L_bbone.error_model.lower_bounds,
                                      L_bbone.error_model.upper_bounds)
 
+    radius       = isdhic.RadiusOfGyration(coords)
+    normal       = isdhic.Normal(radius.name, L_rog.data.values, radius, L_rog.error_model.k)
+
     for param in (coords, forces): params.add(param)
 
     tsallis = isdhic.TsallisEnsemble('tsallis',forcefield)
@@ -85,7 +87,7 @@ if __name__ == '__main__':
 
     print '\n--- testing Tsallis ensemble ---\n'
 
-    L_intra.enabled, prior.enabled, L_bbone.enabled = 0, 1, 0
+    L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 0, 1, 0, 0
 
     with take_time('calculating energy with isdhic'):
         a = tsallis.log_prob()
@@ -106,7 +108,7 @@ if __name__ == '__main__':
 
     print '\n--- testing Logistic likelihood ---\n'
 
-    L_intra.enabled, prior.enabled, L_bbone.enabled = 1, 0, 0
+    L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 1, 0, 0, 0
 
     with take_time('evaluating logistic likelihood with isdhic'):
         contacts.update()
@@ -132,7 +134,7 @@ if __name__ == '__main__':
 
     print '\n--- testing LowerUpper model ---\n'
 
-    L_intra.enabled, prior.enabled, L_bbone.enabled = 0, 0, 1
+    L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 0, 0, 1, 0
 
     with take_time('evaluating lowerupper model with isdhic'):
         backbone.update()
@@ -154,17 +156,43 @@ if __name__ == '__main__':
 
     report_gradient(forces.get(),-b)
 
+    ## radius of gyration only
+
+    print '\n--- testing RadiusOfGyration model ---\n'
+
+    L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 0, 0, 0, 1
+
+    with take_time('evaluating rog model with isdhic'):
+        radius.update()
+        a = normal.log_prob()
+
+    with take_time('evaluating rog model with isd'):
+        L_rog.fill_mock_data()
+        b = L_rog.error_model.energy(L_rog)
+
+    report_log_prob(a,-b)
+
+    with take_time('calculating forces with isdhic'):
+        forces.set(0.)
+        radius.update()
+        normal.update_forces()
+
+    with take_time('calculating forces with isd'):
+        b = posterior.torsion_posterior.gradient(coords.get())
+
+    report_gradient(forces.get(),-b)
+
     ## full posterior
 
     print '\n--- testing full posterior ---\n'
 
-    L_intra.enabled, prior.enabled, L_bbone.enabled = 1, 1, 1
+    L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 1, 1, 1, 1
 
     with take_time('evaluating posterior with isdhic'):
-        for mock in (backbone, contacts):
+        for mock in (backbone, contacts, radius):
             mock.update()
         a = 0.
-        for model in (tsallis, logistic, lowerupper):
+        for model in (tsallis, logistic, lowerupper, normal):
             a += model.log_prob()
 
     with take_time('evaluating posterior with isd'):
@@ -177,7 +205,7 @@ if __name__ == '__main__':
         forces.set(0.)
         tsallis.update_forces()
 
-        for model in (logistic, lowerupper):
+        for model in (logistic, lowerupper, normal):
             model.mock.update()
             model.update_forces()
 
@@ -190,7 +218,7 @@ if __name__ == '__main__':
 
     print '\n--- testing conditional posterior ---\n'
 
-    p_coords = isdhic.PosteriorCoordinates('Pr(x|D)', (lowerupper, logistic), (tsallis,))
+    p_coords = isdhic.PosteriorCoordinates('Pr(x|D)', (lowerupper, logistic, normal), (tsallis,))
 
     with take_time('evaluating log probibility of {}'.format(p_coords)):
         lgp = p_coords.log_prob()

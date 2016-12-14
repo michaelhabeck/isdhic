@@ -142,7 +142,7 @@ class Normal(Likelihood):
 
         diff = self.mock.get() - self.data
 
-        return - 0.5 * self.tau * np.dot(diff,diff) - self.logZ(data)
+        return - 0.5 * self.tau * np.dot(diff,diff) - self.logZ
 
     def update_derivatives(self):
 

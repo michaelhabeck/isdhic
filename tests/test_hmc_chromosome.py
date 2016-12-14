@@ -24,21 +24,23 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
         result = super(HamiltonianMonteCarlo, self).sample()
 
-        if len(self.samples) and not len(self.samples) % 10:
-            print '{0}, stepsize = {1:.3e}, accept = {2}'.format(
-                self.history, self.stepsize, result[1])
+        if len(self.history) and not len(self.history) % 10:
+            print '{0}, stepsize = {1:.3e}'.format(self.history, self.stepsize)
 
         return result
 
 if __name__ == '__main__':
 
     filename = './chrX_cell1_500kb.py'
+    filename = './chrX_cell1_50kb.py'
 
     with open(filename) as script:
         exec script
 
-    extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
-    coords.set(extended)
+    if False:
+
+        extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
+        coords.set(extended)
     
     pymol = utils.ChainViewer()
 
