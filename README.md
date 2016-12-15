@@ -32,3 +32,9 @@ pip install numpy scipy csb
 optional
 
 * matplotlib
+
+### Usage ###
+
+Examples for running ISD on single-cell chromosome data from [Nagano et al.](http://www.nature.com/nature/journal/v502/n7469/full/nature12593.html) can be found in the *scripts/* folder.
+
+
