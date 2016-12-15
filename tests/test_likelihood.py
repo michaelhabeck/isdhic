@@ -1,11 +1,13 @@
-import utils
 import isdhic
 import numpy as np
 
+from isdhic import utils
 from isdhic.core import take_time
 from isdhic.model import Likelihood
 
 from scipy import optimize
+
+from test_params import random_pairs
 
 class Logistic(isdhic.Logistic):
     """Logistic
@@ -33,8 +35,6 @@ def log_prob(x, coords, likelihood):
     return likelihood.log_prob()
 
 if __name__ == '__main__':
-
-    from test_params import random_pairs
 
     ## create universe
 

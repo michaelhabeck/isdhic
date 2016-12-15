@@ -1,11 +1,14 @@
-import os
-import sys
-import utils
-import isdhic
+"""
+Utility class for creating a beads-on-string model of a chromosome.
+"""
 import numpy as np
-import compare_with_isd as compare
 
-from isdhic.core import take_time
+from .utils import create_universe
+from .prior import TsallisEnsemble
+from .model import Probability, Normal, LowerUpper, Logistic
+from .params import Forces, Coordinates, Parameters, ModelDistances, RadiusOfGyration
+from .posterior import PosteriorCoordinates
+from .forcefield import ForcefieldFactory
 
 class ChromosomeSimulation(object):
 
@@ -44,15 +47,15 @@ class ChromosomeSimulation(object):
     
     def create_universe(self):
 
-        self._universe = utils.create_universe(self.n_particles)
+        self._universe = create_universe(self.n_particles)
 
     def create_params(self):
 
-        params = isdhic.Parameters()
-        isdhic.Probability.set_params(params)
+        params = Parameters()
+        Probability.set_params(params)
 
-        coords = isdhic.Coordinates(self.universe)
-        forces = isdhic.Forces(self.universe)
+        coords = Coordinates(self.universe)
+        forces = Forces(self.universe)
 
         for param in (coords, forces): params.add(param)
 
@@ -60,12 +63,12 @@ class ChromosomeSimulation(object):
 
     def create_prior(self):
 
-        forcefield   = isdhic.ForcefieldFactory.create_forcefield(
+        forcefield   = ForcefieldFactory.create_forcefield(
             self.forcefield, self.universe)
         forcefield.d = np.array([[self.diameter]])
         forcefield.k = np.array([[self.k_forcefield]])
 
-        prior = isdhic.TsallisEnsemble('tsallis', forcefield)
+        prior = TsallisEnsemble('tsallis', forcefield)
         prior.beta   = self.beta
         prior.E_min  = self.E_min
 
@@ -75,9 +78,9 @@ class ChromosomeSimulation(object):
 
         connectivity = zip(range(self.n_particles-1),range(1,self.n_particles))
         coords       = self.params['coordinates']
-        backbone     = isdhic.ModelDistances(coords, connectivity, 'backbone')
+        backbone     = ModelDistances(coords, connectivity, 'backbone')
         bonds        = np.ones(self.n_particles-1) * self.diameter
-        lowerupper   = isdhic.LowerUpper(backbone.name, bonds, backbone, 0 * bonds, bonds, self.k_backbone)
+        lowerupper   = LowerUpper(backbone.name, bonds, backbone, 0 * bonds, bonds, self.k_backbone)
 
         return lowerupper
 
@@ -85,16 +88,16 @@ class ChromosomeSimulation(object):
 
         threshold = np.ones(len(pairs)) * self.factor * self.diameter
         coords    = self.params['coordinates']
-        contacts  = isdhic.ModelDistances(coords, pairs, 'contacts')
-        logistic  = isdhic.Logistic(contacts.name, threshold, contacts, self.steepness)
+        contacts  = ModelDistances(coords, pairs, 'contacts')
+        logistic  = Logistic(contacts.name, threshold, contacts, self.steepness)
 
         return logistic
 
     def create_radius_of_gyration(self, Rg=0.):
 
         coords = self.params['coordinates']
-        radius = isdhic.RadiusOfGyration(coords)
-        normal = isdhic.Normal(radius.name, np.array([Rg]), radius)
+        radius = RadiusOfGyration(coords)
+        normal = Normal(radius.name, np.array([Rg]), radius)
 
         return normal
 
@@ -109,46 +112,8 @@ class ChromosomeSimulation(object):
                        self.create_contacts(contacts),
                        self.create_radius_of_gyration())
 
-        posterior = isdhic.PosteriorCoordinates(
-            'posterior_xyz', likelihoods=likelihoods, priors=priors)
+        posterior = PosteriorCoordinates(
+            'chromosome structure', likelihoods=likelihoods, priors=priors)
 
         return posterior
 
-if __name__ == '__main__':
-
-    ## generate posterior with isd
-
-    posterior, contacts = compare.create_isd_posterior()
-    beadsize = posterior.likelihoods['backbone'].data.values[0]
-    
-    n_particles  = len(posterior.universe.atoms)
-    simulation   = ChromosomeSimulation(n_particles, diameter=beadsize)
-    posterior_x  = simulation.create_chromosome(contacts)
-    universe     = simulation.universe
-    coords       = simulation.params['coordinates']
-    forces       = simulation.params['forces']
-    
-    for model in posterior_x.likelihoods:
-        print model
-
-    print '\n--- testing conditional posterior ---\n'
-
-    with take_time('evaluating log probability of {}'.format(posterior_x)):
-        a = posterior_x.log_prob()
-
-    with take_time('evaluating posterior with isd'):
-        b = posterior.torsion_posterior.energy(coords.get())
-
-    compare.report_log_prob(a,-b)
-
-    with take_time('\nevaluating forces of {}'.format(posterior_x)):
-        forces.set(0.)
-        posterior_x.update_forces()
-
-    with take_time('calculating forces with isd'):
-        b = posterior.torsion_posterior.gradient(coords.get())
-
-    compare.report_gradient(forces.get(),-b)
-
-
-        

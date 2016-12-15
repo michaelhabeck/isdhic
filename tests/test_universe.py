@@ -1,9 +1,9 @@
 """
 Testing functionality of the Universe class
 """
-import utils
-import isdhic
 import numpy as np
+
+from isdhic import utils
 
 pymol = utils.ChainViewer()
 

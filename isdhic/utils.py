@@ -1,10 +1,11 @@
 import os
 import time
-import isdhic
 import tempfile
 import numpy as np
 
 from csb.bio import structure
+
+from .universe import Universe
 
 def randomwalk(n_steps, dim=3):
     """
@@ -44,7 +45,7 @@ def create_universe(n_particles=1, diameter=1):
     diameter : non-negative float
       particle diameter
     """
-    universe = isdhic.Universe(int(n_particles))
+    universe = Universe(int(n_particles))
     universe.coords[...] = randomwalk(n_particles) * diameter
 
     return universe

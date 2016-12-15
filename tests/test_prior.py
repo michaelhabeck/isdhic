@@ -1,10 +1,10 @@
 """
-Testing functionality of the conformational prior
+Testing functionality of the conformational prior. Checking gradient etc.
 """
-import utils
 import isdhic
 import numpy as np
 
+from isdhic import utils
 from isdhic.core import take_time
 
 from scipy import optimize

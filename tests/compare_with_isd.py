@@ -4,9 +4,9 @@ Comparison with old ISD version.
 import os
 import sys
 import isdhic
-import utils
 import numpy as np
 
+from isdhic import utils
 from isdhic.core import take_time
 
 def report_log_prob(a, b):

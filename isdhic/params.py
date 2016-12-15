@@ -225,7 +225,7 @@ class ModelDistances(Distances):
 
 class RadiusOfGyration(Parameter):
 
-    def __init__(self, coords, name='Rgyr'):
+    def __init__(self, coords, name='rog'):
         """RadiusOfGyration
 
         Mean distance from center of mass

@@ -1,8 +1,12 @@
-import utils
+"""
+Running Hamiltonian Monte Carlo on an oscillator with coupled degrees
+of freedom.
+"""
 import isdhic
 import numpy as np
 import pylab as plt
 
+from isdhic import utils
 from isdhic.core import take_time
 from isdhic.params import Parameter
 

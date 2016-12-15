@@ -1,15 +1,15 @@
 """
 Testing functionality of the Parameter class
 """
-import utils
 import isdhic
 import numpy as np
 
+from isdhic import utils
 from isdhic.core import take_time
 
 def random_pairs(n_particles, n_pairs):
     """
-    Create set of random distances
+    Create set of random contacts.
     """
     pairs = set()
 
@@ -76,7 +76,3 @@ if __name__ == '__main__':
 
     print params
 
-    if False:
-
-        viewer = utils.ChainViewer()
-        viewer(universe.coords)

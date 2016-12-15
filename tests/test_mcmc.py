@@ -1,3 +1,6 @@
+"""
+Test random walk Monte Carlo on a Gaussian model.
+"""
 import isdhic
 import numpy as np
 import pylab as plt

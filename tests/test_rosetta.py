@@ -22,7 +22,7 @@ a = universe.forces.flatten()
 
 msg = 'eps={0:.0e}, norm={1:.2e}, corr={2:.1f}'
 
-for eps in np.logspace(-3,-8,8):
+for eps in np.logspace(-3,-8,6):
 
     b = optimize.approx_fprime(coords, forcefield.energy, eps)
     print msg.format(eps, np.fabs((a-b)/np.fabs(a)).max(), np.corrcoef(a,b)[0,1]*100)

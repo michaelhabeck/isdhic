@@ -8,8 +8,7 @@ from csb.core import validatedproperty
 class Probability(Nominable):
     """Probability
 
-    Generic class that will be subclassed by all probabilistic
-    models that are needed to describe projection data.
+    Generic class that will be subclassed by all probabilistic models.
     """
     _params = None
 
@@ -51,8 +50,7 @@ class Likelihood(Probability):
     @validatedproperty
     def grad(values):
         """
-        Array for storing derivatives of likelihood with respect
-        to mock data
+        Array for storing derivatives of likelihood with respect to mock data.
         """
         return np.ascontiguousarray(values)
 

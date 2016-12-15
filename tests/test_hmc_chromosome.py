@@ -1,7 +1,7 @@
-import utils
 import isdhic
 import numpy as np
 
+from isdhic import utils
 from isdhic.core import take_time
 
 from scipy import optimize
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     ## set up X chromosome simulation at 500 kb / 50 kb resolution
 
     resolution = 500 ## Kb
-    filename   = './chrX_cell1_{0}kb.py'.format(resolution)
+    filename   = '../scripts/chrX_cell1_{0}kb.py'.format(resolution)
 
     with open(filename) as script:
         exec script
