@@ -35,6 +35,6 @@ universe   = simulation.universe
 coords     = simulation.params['coordinates']
 forces     = simulation.params['forces']
 
-model.data[0] = mu_rog
-model.tau     = tau_rog
+posterior['rog'].data[0] = mu_rog
+posterior['rog'].tau     = tau_rog
 
