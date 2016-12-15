@@ -1,12 +1,11 @@
 """
-Inferential structure determination of the X chromosome at 500 kb
-resolution using Hamiltonian Monte Carlo.
+Inferential structure determination of the X chromosome at 500 kb resolution
+using Hamiltonian Monte Carlo.
 """
 import sys
 import isdhic
 import numpy as np
 
-from isdhic import utils
 from isdhic.core import take_time
 
 from scipy import optimize
@@ -25,8 +24,6 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
 if __name__ == '__main__':
 
-    pymol = utils.ChainViewer()
-
     ## set up X chromosome simulation at 500 kb / 50 kb resolution
 
     resolution = 500 ## Kb
@@ -42,16 +39,16 @@ if __name__ == '__main__':
 
     ## use Hamiltonian Monte Carlo generate X chromosome structures
     ## from the posterior distribution
+
+    n_steps  = 1e3                                    ## number of HMC iterations
+    n_leaps  = 1e2                                    ## number of leapfrog integration steps
+    stepsize = 1e-3                                   ## initial integration stepsize
     
-    hmc = HamiltonianMonteCarlo(posterior,stepsize=1e-3)
-    hmc.leapfrog.n_steps = 100
-    hmc.adapt_until      = int(1e6)
+    hmc = HamiltonianMonteCarlo(posterior,stepsize=stepsize)
+    hmc.leapfrog.n_steps = int(n_leaps)
+    hmc.adapt_until      = int(0.5 * n_steps)
     hmc.activate()
 
     with take_time('running HMC'):
-        hmc.run(1e3)
-
-    X = np.array([state.positions for state in hmc.samples]).reshape(len(hmc.samples),-1,3)
-    E = np.array([state.potential_energy for state in hmc.samples])
-    K = np.array([state.kinetic_energy for state in hmc.samples])
+        hmc.run(n_steps)
 

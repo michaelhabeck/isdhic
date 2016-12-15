@@ -8,18 +8,12 @@ import pylab as plt
 
 from isdhic import utils
 from isdhic.core import take_time
-from isdhic.params import Parameter
+from isdhic.params import Array 
 
 from scipy import optimize
 
 from csb.numeric import log_sum_exp
 from csb.statistics import autocorrelation
-
-class Array(Parameter):
-
-    def set(self, value):
-
-        self._value = np.array(value)
 
 class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
@@ -51,11 +45,8 @@ class Oscillator(isdhic.Probability):
 
         self.K = (K + K.T) / 2.
 
-        self.params.add(Array('coordinates'))
-        self.params.add(Array('forces'))
-
-        self.params['forces'].set(np.zeros(len(K)))
-        self.params['coordinates'].set(np.zeros(len(K)))
+        self.params.add(Array('coordinates',len(K)))
+        self.params.add(Array('forces',len(K)))
 
     def log_prob(self):
 

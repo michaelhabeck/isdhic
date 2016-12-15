@@ -64,17 +64,6 @@ if __name__ == '__main__':
 
 if False:
 
-    from csb.bio.utils import distance_matrix
-
-    burnin = 500
-
-    D = 0.
-    for x in X[burnin:]:
-        D += distance_matrix(x)
-    D/= len(X)
-
-if False:
-
     from isd import utils
 
     prior = posterior.priors[0]
@@ -82,28 +71,6 @@ if False:
 
     X = E_isd.torsion_angles.copy()
 
-    backbone, contacts, rog = posterior.likelihoods
-
-    E_prior = []
-    E_bbone = []
-    E_intra = []
-    E_rog   = []
-    
-    for x in X:
-
-        coords.set(x)
-        posterior.update()
-        
-        E_prior.append(-prior.log_prob())
-        E_bbone.append(-backbone.log_prob())
-        E_intra.append(-contacts.log_prob())
-        E_rog.append(-rog.log_prob())
-        
-    E_prior = np.array(E_prior)
-    E_bbone = np.array(E_bbone)
-    E_intra = np.array(E_intra)
-    E_rog   = np.array(E_rog)
-    
 if False:
 
     x = coords.get().copy()

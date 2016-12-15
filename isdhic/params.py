@@ -86,36 +86,45 @@ class Precision(Scale):
     """
     pass
 
-class Coordinates(Parameter):
+class Array(Parameter):
+
+    def __init__(self, name, size):
+
+        super(Array, self).__init__(name)
+
+        self._value = np.ascontiguousarray(np.zeros(int(size)))
+
+    def set(self, value):
+
+        self._value[...] = np.reshape(value, (-1,))
+
+    def __len__(self):
+
+        return len(self._value)
+
+class Coordinates(Array):
     """Coordinates
 
     Cartesian coordinates
     """
     def __init__(self, universe, name='coordinates'):
         
-        super(Coordinates, self).__init__(name)
-        self._value = np.ascontiguousarray(universe.coords.reshape(-1,))
+        super(Coordinates, self).__init__(name, 3 * universe.n_particles)
 
-    def set(self, coords):
-        self._value[...] = coords.reshape(-1,)
+        self.set(universe.coords)
 
-class Forces(Parameter):
+class Forces(Array):
     """Forces
 
     Cartesian gradient
     """
     def __init__(self, universe, name='forces'):
         
-        super(Forces, self).__init__(name)
-        self._value = np.ascontiguousarray(universe.forces.reshape(-1,))
+        super(Forces, self).__init__(name, 3 * universe.n_particles)
 
-    def set(self, value):
-        if np.iterable(value):
-            self._value[...] = value.reshape(-1,)
-        else:
-            self._value[...] = value
-
-class Distances(Parameter):
+        self.set(universe.forces)
+        
+class Distances(Array):
     """Distances
 
     Class for storing and evaluating inter-particle distances. In addition
@@ -158,14 +167,12 @@ class Distances(Parameter):
           2-tuples specifying the particles whose pairwise distances will be
           computed
         """
-        super(Distances, self).__init__(name)
+        super(Distances, self).__init__(name, len(pairs))
 
         i, j = np.transpose(pairs).astype('i')
 
         self.first_index  = i
         self.second_index = j
-
-        self._value = np.ascontiguousarray(np.zeros(len(i)))
 
     def set(self, distances):
 
@@ -173,7 +180,7 @@ class Distances(Parameter):
             msg = 'Distances must be non-negative'
             raise ValueError(msg)
 
-        self._value[...] = distances
+        super(Distances, self).set(distances)
 
 class ModelDistances(Distances):
     """ModelDistances
