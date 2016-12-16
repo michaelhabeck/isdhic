@@ -67,14 +67,14 @@ class MetropolisHastings(object):
         """
         raise NotImplementedError
 
-    def sample(self):
+    def sample(self, current=None):
         """
         Proposes a new value for the parameter which is accepted or
         rejected according to the Metropolis criterion. Returns the
         new state and a flag indicating if the proposed state was
         accepted or not.
         """
-        current   = self.samples[-1]
+        current   = current or self.samples[-1]
         candidate = self.propose(current)
         
         if self.accept(candidate, current):

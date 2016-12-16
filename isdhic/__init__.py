@@ -9,3 +9,4 @@ from .prior import BoltzmannEnsemble, TsallisEnsemble
 from .data import HiCData, HiCParser
 from .mcmc import RandomWalk, AdaptiveWalk
 from .hmc import HamiltonianMonteCarlo
+from .rex import ReplicaExchange, ReplicaHistory, ReplicaState
