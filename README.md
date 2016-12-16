@@ -29,12 +29,19 @@ Install with
 pip install numpy scipy csb
 ```
 
-optional
+Optional (used in only tests and application scripts)
 
-* matplotlib
+* matplotlib: [download](http://matplotlib.org)
+
+Install with
+```
+pip install matplotlib
+```
 
 ### Usage ###
 
-Examples for running ISD on single-cell chromosome data from [Nagano et al.](http://www.nature.com/nature/journal/v502/n7469/full/nature12593.html) can be found in the *scripts/* folder.
+Examples for running ISD on single-cell chromosome data from
+[Nagano et al.](http://www.nature.com/nature/journal/v502/n7469/full/nature12593.html)
+can be found in the *scripts/* folder.
 
 Execute the scripts *run_hmc.py* and *analyze.py*. 

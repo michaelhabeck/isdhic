@@ -59,9 +59,10 @@ if __name__ == '__main__':
     limits = (0,n_particles)
     
     fig, ax = plt.subplots(1,1,figsize=(10,10),subplot_kw=dict(xlim=limits,ylim=limits))
-    ax.matshow(ensemble.average_distances(-500,10), origin='lower')
+    ax.matshow(ensemble.average_distances(-500,10), cmap=cm.hot, origin='lower')
     ax.scatter(*np.transpose(list(posterior['contacts'].mock.pairs)), color='w', alpha=0.7, s=80)
-
+    ax.xaxis.set_ticks_position('bottom')
+    
     ## calculate energies and plot energy traces
 
     energies = ensemble.calculate_energies(posterior,burnin=100)
