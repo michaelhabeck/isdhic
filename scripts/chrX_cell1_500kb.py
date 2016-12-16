@@ -1,5 +1,5 @@
 """
-This script sets up posterior probability for the structure of
+This script sets up the posterior probability of the structure of
 the X chromosome based on single-cell Hi-C contact data. 
 """
 from isdhic import HiCParser
@@ -56,10 +56,10 @@ dataset.remove_self_contacts()
 ## Set up posterior probability using the above settings
 
 simulation  = ChromosomeSimulation(n_particles,
-                                    forcefield = forcefield,
-                                    k_backbone = k_backbone,
-                                    diameter   = diameter,
-                                    factor     = factor)
+                                   forcefield = forcefield,
+                                   k_backbone = k_backbone,
+                                   diameter   = diameter,
+                                   factor     = factor)
 
 posterior = simulation.create_chromosome(list(dataset))
 universe  = simulation.universe

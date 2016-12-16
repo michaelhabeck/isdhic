@@ -18,18 +18,18 @@ def log_prob(x, prior):
 
 if __name__ == '__main__':
 
-    params       = isdhic.Parameters()
+    params     = isdhic.Parameters()
     isdhic.Probability.set_params(params)
 
-    universe     = utils.create_universe(n_particles=1e3, diameter=4.)
-    coords       = isdhic.Coordinates(universe)
-    forces       = isdhic.Forces(universe)
-    forcefield   = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
+    universe   = utils.create_universe(n_particles=1e3, diameter=4.)
+    coords     = isdhic.Coordinates(universe)
+    forces     = isdhic.Forces(universe)
+    forcefield = isdhic.ForcefieldFactory.create_forcefield('rosetta',universe)
 
     for param in (coords,forces): params.add(param)
 
-    boltzmann = isdhic.BoltzmannEnsemble('boltzmann',forcefield)
-    tsallis   = isdhic.TsallisEnsemble('tsallis',forcefield)
+    boltzmann  = isdhic.BoltzmannEnsemble('boltzmann',forcefield)
+    tsallis    = isdhic.TsallisEnsemble('tsallis',forcefield)
 
     print forcefield.energy(coords.get())
     print boltzmann.log_prob()

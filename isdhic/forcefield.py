@@ -4,7 +4,7 @@ Non-bonded force fields.
 PROLSQ uses a quartic repulsion term to penalize particle-particle
 clashses.
 
-ROSETTA is a ramped Lennard-Jones potential.
+ROSETTA is a linearly ramped Lennard-Jones potential.
 """
 import numpy as np
 
@@ -119,13 +119,11 @@ class ForcefieldFactory(object):
     @classmethod
     def create_forcefield(cls, name, universe):
 
-        name = name.lower()
-
-        if name == 'rosetta':
+        if name.lower() == 'rosetta':
             forcefield = ROSETTA()
             cellsize = 5.51
             
-        elif name == 'prolsq':
+        elif name.lower() == 'prolsq':
             forcefield = PROLSQ()
             cellsize = 3.71
             
@@ -137,8 +135,8 @@ class ForcefieldFactory(object):
 
         forcefield.nblist = nblist
         forcefield.n_types = 1
+        forcefield.types = np.zeros(universe.n_particles,'i')
         forcefield.k = np.array([[1.]])
         forcefield.d = np.array([[1.]])
-        forcefield.types = np.zeros(universe.n_particles,'i')
 
         return forcefield    
