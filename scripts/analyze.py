@@ -56,12 +56,14 @@ if __name__ == '__main__':
     ## show distance matrix and superimpose contacts
 
     n_particles = X.shape[1]
-    limits = (0,n_particles)
+    limits = (1,n_particles+1)
     
     fig, ax = plt.subplots(1,1,figsize=(10,10),subplot_kw=dict(xlim=limits,ylim=limits))
-    ax.matshow(ensemble.average_distances(-500,10), cmap=cm.hot, origin='lower')
-    ax.scatter(*np.transpose(list(posterior['contacts'].mock.pairs)), color='w', alpha=0.7, s=80)
+    ax.matshow(ensemble.average_distances(-500,10), cmap=cm.hot, origin='lower',extent=limits+limits)
+    ax.scatter(*(1+np.transpose(list(posterior['contacts'].mock.pairs))), color='w', alpha=0.7, s=80)
     ax.xaxis.set_ticks_position('bottom')
+    ax.set_xlabel(r'bead $i$', fontsize=24)
+    ax.set_ylabel(r'bead $j$', fontsize=24)
     
     ## calculate energies and plot energy traces
 
