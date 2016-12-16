@@ -5,16 +5,16 @@ the X chromosome based on single-cell Hi-C contact data.
 from isdhic import HiCParser
 from isdhic.chromosome import ChromosomeSimulation
 
-## Each bead represents 500 Kb of chromatin and has diameter of
-## roughly 430 nm (assuming a chromatin density of 12 Mb / mu^3
+## Each bead represents 500 Kb of chromatin and has a diameter of
+## roughly 430 nm (assuming a chromatin density of 12 Mb / mu^3)
 
 resolution  =    500 * 1e3
 chrsize     = 166500 * 1e3
 n_particles = int(chrsize / resolution)
 
-## Ramped Lennard-Jones potential preventing inter-bead clashes.
-## The bead diameter is 4 and chosen for compatibility with
-## parameters used in protein simulations
+## Linearly ramped Lennard-Jones potential preventing inter-bead
+## clashes. The bead diameter is 4 and chosen for compatibility with
+## settings used in protein simulations
 
 forcefield  = 'rosetta'
 diameter    = 4.
@@ -27,7 +27,7 @@ factor      = 1.5
 
 ## Beads-on-string-model: consecutive beads are connected by a
 ## harmonic potential with a flat bottom. The harmonic force
-## becomes active when the distance between beads i, i+1 exceeds
+## becomes active when the distance between beads (i, i+1) exceeds
 ## the bead diameter. The force constant controls the strength of
 ## that force
 
@@ -42,7 +42,9 @@ mu_rog      = 3.7e3 / (2.58 * 430. / diameter)
 sigma_rog   = 0.3e3 / (2.58 * 430. / diameter)
 tau_rog     = n_rog / sigma_rog**2
 
-## Read data and map chromosomal positions onto 500Kb beads
+## Read data and map chromosomal positions onto 500Kb beads and
+## remove contacts arising from loci that are close in sequence and
+## were mapped to the same bead.
 
 parser      = HiCParser(filename, 'X', 'X')
 datasets    = parser.parse()
