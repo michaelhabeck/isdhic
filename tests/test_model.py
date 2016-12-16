@@ -37,9 +37,9 @@ class Gaussian(Probability):
 
         super(Gaussian, self).__init__(name)
 
-        self._location = isdhic.Location(self.name + '.x')
-        self._mean = isdhic.Location(self.name + '.mu')
+        self._mean      = isdhic.Location(self.name + '.mu')
         self._precision = isdhic.Precision(self.name + '.tau')
+        self._location  = isdhic.Location(self.name + '.x')
         
         self._params.add(self._location)
         self._params.add(self._mean)
