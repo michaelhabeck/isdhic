@@ -111,7 +111,7 @@ class Coordinates(Array):
         
         super(Coordinates, self).__init__(name, 3 * universe.n_particles)
 
-        self.set(universe.coords)
+        self._value = np.ascontiguousarray(universe.coords.reshape(-1,))
 
 class Forces(Array):
     """Forces
@@ -122,8 +122,8 @@ class Forces(Array):
         
         super(Forces, self).__init__(name, 3 * universe.n_particles)
 
-        self.set(universe.forces)
-        
+        self._value = np.ascontiguousarray(universe.forces.reshape(-1,))
+
 class Distances(Array):
     """Distances
 
