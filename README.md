@@ -1,8 +1,6 @@
 # isdhic #
 
-This Python package implements a minimal version of Inferential
-Structure Determination (ISD) and can be used to calculate structures
-of chromosomes from single-cell Hi-C data.
+This Python package implements a minimal version of [Inferential Structure Determination (ISD)](http://science.sciencemag.org/content/309/5732/303) and can be used to calculate structures of chromosomes from single-cell Hi-C data.
 
 ### Installation ###
 
@@ -29,7 +27,7 @@ Install with
 pip install numpy scipy csb
 ```
 
-Optional (used in only tests and application scripts)
+Optional (used in only test and application scripts)
 
 * matplotlib: [download](http://matplotlib.org)
 
@@ -40,8 +38,10 @@ pip install matplotlib
 
 ### Usage ###
 
-Examples for running ISD on single-cell chromosome data from
-[Nagano et al.](http://www.nature.com/nature/journal/v502/n7469/full/nature12593.html)
+Examples for running ISD on single-cell chromosome
+[data](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE48262)
+from
+[Nagano *et al.* (2013)](http://www.nature.com/nature/journal/v502/n7469/full/nature12593.html)
 can be found in the *scripts/* folder.
 
 Execute the scripts *run_hmc.py* and *analyze.py*. 
