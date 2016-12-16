@@ -76,7 +76,7 @@ class Forcefield(Nominable, CWrapper):
 
     def update_gradient(self, coords, forces):
 
-        self.ctype.update_gradient(coords, forces, self.types, 1)
+        return self.ctype.update_gradient(coords, forces, self.types, 1)
 
     def __str__(self):
 

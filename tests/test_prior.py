@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
     boltzmann = isdhic.BoltzmannEnsemble('boltzmann',forcefield)
     tsallis   = isdhic.TsallisEnsemble('tsallis',forcefield)
-    
+
     print forcefield.energy(coords.get())
     print boltzmann.log_prob()
 

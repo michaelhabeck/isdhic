@@ -114,8 +114,9 @@ class TsallisEnsemble(BoltzmannEnsemble):
 
             self._forces[...] = 0.
 
-            E  = self.forcefield.ctype.update_gradient(
-                coords, self._forces, self.forcefield.types, 1)
+            self.forcefield.update_list(coords)        
+            E = self.forcefield.update_gradient(coords, self._forces)
+
             q  = self.q
             E *= self.beta
             E_min = self.beta * self.E_min
