@@ -54,7 +54,18 @@ class Likelihood(Probability):
         """
         return np.ascontiguousarray(values)
 
-    def __init__(self, name, data, mock):
+    @property
+    def beta(self):
+        """
+        Returns the current value of the inverse temperature
+        """
+        return self._beta.get()
+
+    @beta.setter
+    def beta(self, value):
+        self._beta.set(value)
+    
+    def __init__(self, name, data, mock, beta=1.0):
         """Likelihood
 
         Initialize likelihood by providing a name, the raw data
@@ -72,13 +83,18 @@ class Likelihood(Probability):
         mock : instance of Parameters
           theory for calculating idealized data (needs to implement
           update_forces)
-          
+
+        beta : non-negative float
+          inverse temperature used in tempering and annealing          
         """
         super(Likelihood, self).__init__(name)
 
         self.data = data
         self.mock = mock
         self.grad = np.zeros(data.shape)
+
+        self._beta = Scale(self.name + '.beta')
+        self.params.add(self._beta)
 
     def update_derivatives(self):
         """
@@ -93,7 +109,7 @@ class Likelihood(Probability):
         """
         self.update_derivatives()
         self.mock.update_forces(self.grad, self.params['forces'].get())
-            
+
 class Normal(Likelihood):
     """Normal
 
@@ -140,11 +156,13 @@ class Normal(Likelihood):
 
         diff = self.mock.get() - self.data
 
-        return - 0.5 * self.tau * np.dot(diff,diff) - self.logZ
+        log_prob = - 0.5 * self.tau * np.dot(diff,diff) - self.logZ
+
+        return self.beta * log_prob
 
     def update_derivatives(self):
 
-        self.grad[...] = self.tau * (self.data - self.mock.get())
+        self.grad[...] = self.beta * self.tau * (self.data - self.mock.get())
 
     def __str__(self):
 
@@ -191,13 +209,14 @@ class LowerUpper(Normal):
 
         lgp = log_prob(self.data, self.mock.get(), self.lower, self.upper)
 
-        return 0.5 * self.tau * lgp - self.logZ
+        return 0.5 * self.beta * self.tau * lgp - self.beta * self.logZ
     
     def update_derivatives(self):
 
         from .lowerupper import update_derivatives
 
-        update_derivatives(self.mock.get(), self.grad, self.lower, self.upper, self.tau)
+        update_derivatives(self.mock.get(), self.grad, self.lower,
+                           self.upper, self.beta * self.tau)
 
     def validate(self):
         if np.any(self.lower > self.upper):
@@ -228,23 +247,25 @@ class Logistic(Likelihood):
         self._steepness.set(value)
     
     def __init__(self, name, data, mock, steepness=1.0):
-
+        
         super(Logistic, self).__init__(name, data, mock)
 
-        self._steepness = Scale(self.name + '.steepness')
+        self._steepness = Scale(self.name + '.steepness')        
         self.alpha = steepness
         
     def log_prob(self):
 
         from .logistic import log_prob
 
-        return log_prob(self.data, self.mock.get(), self.alpha)
+        return self.beta * log_prob(self.data, self.mock.get(), self.alpha)
 
     def update_derivatives(self):
 
         from .logistic import update_derivatives
 
         update_derivatives(self.data, self.mock.get(), self.grad, self.alpha)
+
+        self.grad *= self.beta
 
     def __str__(self):
 
