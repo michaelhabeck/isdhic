@@ -47,9 +47,9 @@ if __name__ == '__main__':
     
     pymol = utils.ChainViewer()
 
-    X = np.array([state.positions for state in hmc.samples]).reshape(len(hmc.samples),-1,3)
-    V = np.array([state.potential_energy for state in hmc.samples])
-    K = np.array([state.kinetic_energy for state in hmc.samples])
+    X = np.array([state.positions for state in samples]).reshape(len(samples),-1,3)
+    V = np.array([state.potential_energy for state in samples])
+    K = np.array([state.kinetic_energy for state in samples])
 
     ensemble = Ensemble(X)
 
