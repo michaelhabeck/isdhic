@@ -47,7 +47,7 @@ class State(object):
 
     @property
     def value(self):
-        return self.positions, self.momenta
+        return self.positions #, self.momenta
 
     @property
     def log_prob(self):

@@ -16,6 +16,9 @@ class History(object):
     def __len__(self):
         return len(self._history)
 
+    def __getitem__(self, index):
+        return self._history[index]
+
     def update(self, accept):
         self._history.append(int(accept))
 
@@ -45,7 +48,9 @@ class MetropolisHastings(object):
         self.history   = History()
         self.model     = model
         self.parameter = parameter
-        self.samples   = []
+        self.state     = self.create_state()
+
+        self.history.clear()
         
     def create_state(self):
         """
@@ -53,50 +58,32 @@ class MetropolisHastings(object):
         """
         return State(self.parameter.get(), self.model.log_prob())
 
-    def store_state(self, state=None):
-
-        self.samples.append(state or self.create_state())
-
-    def accept(self, candidate, current):
-        diff = candidate.log_prob - current.log_prob
-        return np.log(np.random.random()) < diff
-
     def propose(self, state):
         """
         Generates a new state from a given input state
         """
         raise NotImplementedError
 
-    def sample(self, current=None):
+    def next(self):
         """
         Proposes a new value for the parameter which is accepted or
-        rejected according to the Metropolis criterion. Returns the
-        new state and a flag indicating if the proposed state was
-        accepted or not.
+        rejected according to the Metropolis criterion. 
         """
-        current   = current or self.samples[-1]
+        current   = self.state
         candidate = self.propose(current)
-        
-        if self.accept(candidate, current):
-            return candidate, True
-        else:
-            return current, False
 
-    def run(self, n_steps):
-        """
-        Generates a sequence of Monte Carlo samples
-        """
-        self.history.clear()
+        diff   = candidate.log_prob - current.log_prob
+        accept = np.log(np.random.random()) < diff
 
-        self.samples = []
-        self.store_state()
-        
-        for i in xrange(int(n_steps)-1):
+        self.state = candidate if accept else current 
 
-            state, accept = self.sample()
+        self.history.update(accept)
 
-            self.store_state(state)
-            self.history.update(accept)
+        return self.state
+
+    def __iter__(self):
+
+        return self
 
 class RandomWalk(MetropolisHastings):
 
@@ -127,7 +114,8 @@ class AdaptiveWalk(RandomWalk):
     def is_active(self):
         return self._active
 
-    def __init__(self, model, parameter, stepsize=1e-1, uprate=1.02, downrate=0.98, adapt_until=0):
+    def __init__(self, model, parameter, stepsize=1e-1,
+                 uprate=1.02, downrate=0.98, adapt_until=0):
 
         super(AdaptiveWalk, self).__init__(model, parameter, stepsize)
 
@@ -137,14 +125,14 @@ class AdaptiveWalk(RandomWalk):
 
         self.deactivate()
 
-    def accept(self, candidate, current):
+    def next(self):
 
-        accept = super(AdaptiveWalk, self).accept(candidate, current)
+        state = super(AdaptiveWalk, self).next()
 
-        if len(self.samples) >= self.adapt_until: self.deactivate()
+        if len(self.history) >= self.adapt_until: self.deactivate()
 
         if self.is_active:
-            self.stepsize *= self.uprate if accept else self.downrate
+            self.stepsize *= self.uprate if self.history[-1] else self.downrate
 
-        return accept
+        return state
 

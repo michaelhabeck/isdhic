@@ -21,7 +21,7 @@ class Swaps(object):
     Iterator over possible swaps between neighboring replicas.
     """
     def __init__(self, n_rex):
-
+        
         self.n_states = int(n_rex)
         self.pairs = deque(generate_pairs(self.n_states))
 
@@ -33,7 +33,6 @@ class Swaps(object):
         return pairs
 
     def __iter__(self):
-
         return self
 
 class ReplicaState(object):
@@ -58,7 +57,8 @@ class ReplicaHistory(object):
 
     def __init__(self):
         self._swaps = defaultdict(History)
-
+        self.n_swaps = 0
+        
     def __str__(self):
         s = []
         for i, j in self.pairs:
@@ -70,10 +70,15 @@ class ReplicaHistory(object):
     def __getitem__(self, pair):
         return self._swaps[pair]
 
+    def __len__(self):
+        return self.n_swaps
+
     def clear(self):
         self._swaps.clear()
-
+        self.n_swaps = 0
+        
     def update(self, accepted):
+        self.n_swaps += 1
         for (i,j), accept in accepted.items():
             self._swaps[(i,j)].update(accept)
 
@@ -83,33 +88,33 @@ class ReplicaHistory(object):
 
 class ReplicaExchange(MetropolisHastings):
 
+    @property
+    def samplers(self):
+        return self._samplers
+
     def __init__(self, samplers):
 
         self._samplers = samplers
         self._swaps    = Swaps(len(self))
         self.history   = ReplicaHistory()
         
+        self.state = ReplicaState([sampler.state for sampler in self.samplers])
+        
     def __len__(self):
         return len(self._samplers)
-
-    def __iter__(self):
-        return iter(self._samplers)
 
     def __getitem__(self, i):
         return self._samplers[i]
 
-    def create_state(self):
-        return ReplicaState([sampler.create_state() for sampler in self])
-    
-    def store_state(self, state=None):
-        self.samples.append(state or self.create_state())
-
     def propose_swap(self, current, i, j):
 
         self[i].parameter.set(current[j].value)
-        self[j].parameter.set(current[i].value)
+        state_ij = self[i].create_state()
 
-        return self[i].create_state(), self[j].create_state()
+        self[j].parameter.set(current[i].value)
+        state_ji = self[j].create_state()
+
+        return state_ij, state_ji
 
     def sample_swap(self, state, i, j):
 
@@ -124,19 +129,21 @@ class ReplicaExchange(MetropolisHastings):
             
         return accept
     
-    def propose(self, current):
+    def next(self):
 
-        return ReplicaState([sampler.sample(state)[0] for sampler, state
-                             in zip(self, current)])
-    
-    def sample(self, current=None):
-
-        current   = current or self.samples[-1]
-        candidate = self.propose(current)
-        accept    = {}
+        state  = ReplicaState([sampler.next() for sampler in self._samplers])
+        accept = {}
 
         for i, j in self._swaps.next():
-            accept[(i,j)] = self.sample_swap(candidate, i, j)
+            accept[(i,j)] = self.sample_swap(state, i, j)
 
-        return candidate, accept
+        self.history.update(accept)
+
+        for i, sampler in enumerate(self._samplers):
+            sampler.state = state[i]
+
+        return state
             
+    def __iter__(self):
+
+        return self
