@@ -49,16 +49,15 @@ class Oscillator(isdhic.Probability):
         self.params.add(Array('forces',len(K)))
 
     def log_prob(self):
-
         return - 0.5 * np.dot(self.x, np.dot(self.K, self.x))
 
     def update_forces(self):
-
         self.params['forces'].set(-np.dot(self.K, self.x))
 
 if __name__ == '__main__':
 
     isdhic.Probability.set_params(isdhic.Parameters())
+
     osci = Oscillator(np.diag([10.,1.]))
     osci = Oscillator(np.array([[10.,-2.5],
                                 [-2.5,1.]]))
@@ -69,13 +68,15 @@ if __name__ == '__main__':
     hmc.activate()
 
     with take_time('running HMC'):
-        hmc.run(1e4)
+        samples = []
+        while len(samples) < 1e4:
+            samples.append(hmc.next())
 
-    q = np.array([state.positions for state in hmc.samples])
-    p = np.array([state.momenta for state in hmc.samples])
-    E = np.array([state.potential_energy for state in hmc.samples])
+    q = np.array([state.positions for state in samples])
+    p = np.array([state.momenta for state in samples])
+    E = np.array([state.potential_energy for state in samples])
 
-    sigma = np.diagonal(np.linalg.inv(osci.K))
+    sigma  = np.diagonal(np.linalg.inv(osci.K))
     limits = (-4*sigma.max(),4*sigma.max())
 
     x = 5 * sigma.max() * np.linspace(-1.,1.,1000)

@@ -20,15 +20,15 @@ def print_rex(states, swaps=[]):
 
 class ReplicaExchange(isdhic.ReplicaExchange):
 
-    def sample(self, current=None):
+    def next(self):
 
-        candidate, accept = super(ReplicaExchange, self).sample(current)
+        state = super(ReplicaExchange, self).next()
 
-        if len(self.samples) % 500:
+        if len(self.history) % 500:
             print '-' * 50
             print self.history
 
-        return candidate, accept
+        return state
             
 class bcolors:
     HEADER    = '\033[95m'
@@ -95,17 +95,20 @@ if __name__ == '__main__':
     ## run replica exchange
 
     rex = ReplicaExchange(samplers)
-    rex.run(1e3)
+
+    samples = []
+    while len(samples) < 1e3:
+        samples.append(rex.next())
 
     x = np.array([[state.value for state in samples]
-                  for samples in rex.samples])
+                  for samples in samples])
 
     ## show sampled replicas
 
     burnin = 200
     rates  = np.array([rex.history[pair].acceptance_rate()
                        for pair in rex.history.pairs])
-    beta   = np.array([sampler.model.tau for sampler in rex])
+    beta   = np.array([sampler.model.tau for sampler in rex.samplers])
 
     y = np.linspace(-1.,1.,10000) * 3.5 * np.max(1/beta**0.5)
 

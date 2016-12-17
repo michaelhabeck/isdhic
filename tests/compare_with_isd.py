@@ -83,6 +83,9 @@ if __name__ == '__main__':
     logistic.alpha = L_intra.error_model.alpha
     lowerupper.tau = L_bbone.error_model.k
 
+    logistic.beta = 0.1
+    posterior.likelihoods['contacts'].set_lambda(float(logistic.beta))
+
     ## Tsallis ensemble only
 
     print '\n--- testing Tsallis ensemble ---\n'

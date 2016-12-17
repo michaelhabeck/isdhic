@@ -58,13 +58,20 @@ if __name__ == '__main__':
 
     sampler = AdaptiveWalk(gaussian, gaussian._location, stepsize, adapt_until=2*burnin)
     sampler.activate()
-    sampler.run(1e4)
 
+    samples = []
+    while len(samples) < 1e4:
+        samples.append(sampler.next())
+
+    if False:
+        sampler.run(1e4)
+        samples = sampler.samples
+    
     print sampler.history
 
     ## evaluate true model
 
-    y = np.array([state.value for state in sampler.samples])
+    y = np.array([state.value for state in samples])
 
     x = gaussian.mu + 5 * gaussian.sigma * np.linspace(-1.,1.,1000)
     p = -0.5 * gaussian.tau * (x-gaussian.mu)**2

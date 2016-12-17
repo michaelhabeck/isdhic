@@ -16,17 +16,16 @@ class HamiltonianMonteCarlo(isdhic.HamiltonianMonteCarlo):
 
     @stepsize.setter
     def stepsize(self, value):
-
         self.leapfrog.stepsize = float(value)
         HamiltonianMonteCarlo.stepsizes.append(self.leapfrog.stepsize)
 
-    def sample(self):
+    def next(self):
 
-        result = super(HamiltonianMonteCarlo, self).sample()
+        result = super(HamiltonianMonteCarlo, self).next()
 
         if len(self.history) and not len(self.history) % 20:
             print '{0}, stepsize = {1:.3e}, log_prob = {2:.3e}'.format(
-                self.history, self.stepsize, self.samples[-1].potential_energy)
+                self.history, self.stepsize, self.state.potential_energy)
 
         return result
 
@@ -55,12 +54,15 @@ if __name__ == '__main__':
     hmc.adapt_until      = int(1e6)
     hmc.activate()
 
-    with take_time('running HMC'):
-        hmc.run(1e3)
+    samples = []
 
-    X = np.array([state.positions for state in hmc.samples]).reshape(len(hmc.samples),-1,3)
-    E = np.array([state.potential_energy for state in hmc.samples])
-    K = np.array([state.kinetic_energy for state in hmc.samples])
+    with take_time('running HMC'):
+        while len(samples) < 1e3:
+            samples.append(hmc.next())
+
+    X = np.array([state.positions for state in samples]).reshape(len(samples),-1,3)
+    E = np.array([state.potential_energy for state in samples])
+    K = np.array([state.kinetic_energy for state in samples])
 
 if False:
 
