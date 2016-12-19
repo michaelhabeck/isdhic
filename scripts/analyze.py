@@ -57,9 +57,12 @@ if __name__ == '__main__':
 
     n_particles = X.shape[1]
     limits = (1,n_particles+1)
+
+    burnin, thining = -500, 10
+    burnin, thining = -100, 1
     
     fig, ax = plt.subplots(1,1,figsize=(10,10),subplot_kw=dict(xlim=limits,ylim=limits))
-    ax.matshow(ensemble.average_distances(-500,10), cmap=cm.hot, origin='lower',extent=limits+limits)
+    ax.matshow(ensemble.average_distances(burnin,thining), cmap=cm.hot, origin='lower',extent=limits+limits)
     ax.scatter(*(1+np.transpose(list(posterior['contacts'].mock.pairs))), color='w', alpha=0.7, s=80)
     ax.xaxis.set_ticks_position('bottom')
     ax.set_xlabel(r'bead $i$', fontsize=24)

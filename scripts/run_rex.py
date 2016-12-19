@@ -41,12 +41,6 @@ class Replica(HamiltonianMonteCarlo):
 
         return state
 
-        if len(self.history) and not len(self.history) % 20:
-            print '{0}, stepsize = {1:.3e}, -log_prob = {2:.3e}'.format(
-                self.history, self.stepsize, self.samples[-1].potential_energy)
-
-        return result
-
     def create_state(self):
 
         self.set_replica_params()
@@ -77,8 +71,6 @@ if __name__ == '__main__':
         np.logspace(0., np.log10(1.06), n_replicas),
         np.linspace(1., 0.1, n_replicas)])
     
-    replicas = []
-    
     ## set up X chromosome simulation at 500 kb / 50 kb resolution
 
     resolution = 500  
@@ -90,22 +82,48 @@ if __name__ == '__main__':
     extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
     coords.set(extended)
 
-    replicas = [Replica(posterior, n_steps=1, q=q, beta=beta) for q, beta in schedule]
+    replicas = [Replica(posterior, n_steps=10, q=q, beta=beta) for q, beta in schedule]
 
     rex = ReplicaExchange(replicas)
 
-if False:
-    
     samples = []
     while len(samples) < 1000:
         samples.append(rex.next())
 
 if False:
 
-    state = rex.state[10]
-    states = []
-    for replica in replicas:
-        replica.parameter.set(state.value)
-        states.append(replica.create_state())
+    posterior['backbone'].beta = 0.
+    posterior['tsallis'].beta = 0.
 
-    
+    p = Replica(posterior, n_steps=10, q=1.06, beta=1.0)
+    q = Replica(posterior, n_steps=10, q=1.00, beta=1.0)
+
+    p = Replica(posterior, n_steps=10, q=1.00, beta=1.0)
+    q = Replica(posterior, n_steps=10, q=1.00, beta=0.1)
+
+    ## to enable correct copying
+
+    ## p.history.update(True)
+    ## q.history.update(True)
+
+    a = p.next()
+    b = q.next()
+
+    p.parameter.set(b.value)
+    B = p.create_state()
+
+    q.parameter.set(a.value)
+    A = q.create_state()
+
+    assert np.all(a.positions==A.positions)
+    assert np.all(b.positions==B.positions)
+
+    assert np.all(b.momenta==A.momenta)
+    assert np.all(a.momenta==B.momenta)
+
+    print a.kinetic_energy, B.kinetic_energy
+    print b.kinetic_energy, A.kinetic_energy
+
+    print A.log_prob + B.log_prob - a.log_prob - b.log_prob
+
+    print 0.9 * (a.potential_energy-B.potential_energy)
