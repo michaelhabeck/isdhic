@@ -119,8 +119,17 @@ class ReplicaExchange(MetropolisHastings):
         self._swaps    = Swaps(len(self))
         self.history   = ReplicaHistory()
         
-        self.state = ReplicaState([sampler.state for sampler in self.samplers])
+        ## self.state = ReplicaState([sampler.state for sampler in self.samplers])
         
+    @property
+    def state(self):
+        return ReplicaState([sampler.state for sampler in self.samplers])
+
+    @state.setter
+    def state(self, state):
+        for i, sampler in enumerate(self._samplers):
+            sampler.state = state[i]
+    
     def __len__(self):
         return len(self._samplers)
 
@@ -159,9 +168,10 @@ class ReplicaExchange(MetropolisHastings):
             accept[(i,j)] = self.sample_swap(state, i, j)
 
         self.history.update(accept)
+        self.state = state
 
-        for i, sampler in enumerate(self._samplers):
-            sampler.state = state[i]
+        ## for i, sampler in enumerate(self._samplers):
+        ##     sampler.state = state[i]
 
         return state
             
