@@ -43,7 +43,7 @@ class Likelihood(Probability):
     @validatedproperty
     def data(values):
         """
-        Observed data stored in a single vector
+        Observed data stored in a single vector.
         """
         return np.ascontiguousarray(values)
 
@@ -57,7 +57,7 @@ class Likelihood(Probability):
     @property
     def beta(self):
         """
-        Returns the current value of the inverse temperature
+        Inverse temperature.
         """
         return self._beta.get()
 
@@ -95,7 +95,8 @@ class Likelihood(Probability):
 
         self._beta = Scale(self.name + '.beta')
         self.params.add(self._beta)
-
+        self.beta  = beta
+        
     def update_derivatives(self):
         """
         Calculate derivative of log likelihood with respect to mock

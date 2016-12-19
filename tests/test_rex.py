@@ -3,7 +3,7 @@ import random
 import numpy as np
 import pylab as plt
 
-from isdhic.rex import Swaps
+from isdhic.rex import Swaps, swap_rate
 from csb.numeric import log_sum_exp
 from test_mcmc import Gaussian
 from collections import OrderedDict
@@ -97,7 +97,7 @@ if __name__ == '__main__':
     rex = ReplicaExchange(samplers)
 
     samples = []
-    while len(samples) < 1e3:
+    while len(samples) < 1e4:
         samples.append(rex.next())
 
     x = np.array([[state.value for state in samples]
@@ -110,7 +110,11 @@ if __name__ == '__main__':
                        for pair in rex.history.pairs])
     beta   = np.array([sampler.model.tau for sampler in rex.samplers])
 
-    y = np.linspace(-1.,1.,10000) * 3.5 * np.max(1/beta**0.5)
+    y = np.linspace(-1.,1.,1000) * 3.5 * np.max(1/beta**0.5)
+    E = 0.5 * y**2
+
+    rates_theo = [swap_rate(-schedule[i]*E, -schedule[i+1]*E) for i in
+                  range(len(schedule)-1)]
 
     limits = (y.min(), y.max())
     n_cols = 5
@@ -132,5 +136,10 @@ if __name__ == '__main__':
     fig.tight_layout()
 
     fig, ax = plt.subplots(1,1)
-    ax.plot(0.5*(beta[1:]+beta[:-1]), rates)
-    
+    ax.plot(0.5*(beta[1:]+beta[:-1]), rates, lw=3, color='k',
+            alpha=0.7, label='empirical swap rate')
+    ax.plot(0.5*(beta[1:]+beta[:-1]), np.exp(rates_theo), lw=2, color='r', ls='--',
+            label='theoretical swap rate')
+    ax.set_xlabel(r'inverse temperature $\beta$',fontsize=20)
+    ax.set_ylabel(r'swap rate',fontsize=20)
+    ax.legend(loc=4,fontsize=20)

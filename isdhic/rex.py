@@ -6,6 +6,7 @@ import numpy as np
 from .mcmc import MetropolisHastings, History
 
 from collections import deque, defaultdict, OrderedDict
+from csb.numeric import log_sum_exp
 
 def generate_pairs(n_rex):
     """
@@ -14,6 +15,26 @@ def generate_pairs(n_rex):
     """
     pairs = zip(range(n_rex),range(1,n_rex))
     return pairs[::2], pairs[1::2]
+
+def swap_rate(log_p, log_q, return_log=True):
+    """
+    Computes the (log) swap rate of a replica exchange simulation, i.e.
+
+    rate(p<->q) = \int p(x) q(y) \min[1, p(y)q(x)/p(x)q(y)]
+    """
+    log_r = np.add.outer(log_p - log_sum_exp(log_p),
+                         log_q - log_sum_exp(log_q))
+
+    ## mask implementing the min operator
+
+    mask = (log_r < log_r.T).astype('i')
+    mask = (1 + mask - mask.T).flatten()
+
+    log_r.shape = (-1,)
+
+    rate = log_sum_exp(log_r[mask>0] + np.log(mask[mask>0]))
+
+    return rate if return_log else np.exp(rate)
 
 class Swaps(object):
     """Swaps

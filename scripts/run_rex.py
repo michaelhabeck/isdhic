@@ -51,7 +51,12 @@ class Replica(HamiltonianMonteCarlo):
 
         self.set_replica_params()
 
-        return super(Replica, self).create_state()
+        state = super(Replica, self).create_state()
+        if len(self.history):
+            state.momenta, state.kinetic_energy = \
+                           self.state.momenta, self.state.kinetic_energy
+
+        return state
     
 class ReplicaExchange(isdhic.ReplicaExchange):
 
@@ -85,11 +90,22 @@ if __name__ == '__main__':
     extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
     coords.set(extended)
 
-    replicas = [Replica(posterior, n_steps=10, q=q, beta=beta) for q, beta in schedule]
+    replicas = [Replica(posterior, n_steps=1, q=q, beta=beta) for q, beta in schedule]
 
     rex = ReplicaExchange(replicas)
 
+if False:
+    
     samples = []
     while len(samples) < 1000:
         samples.append(rex.next())
 
+if False:
+
+    state = rex.state[10]
+    states = []
+    for replica in replicas:
+        replica.parameter.set(state.value)
+        states.append(replica.create_state())
+
+    
