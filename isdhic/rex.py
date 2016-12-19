@@ -136,12 +136,12 @@ class ReplicaExchange(MetropolisHastings):
     def __getitem__(self, i):
         return self._samplers[i]
 
-    def propose_swap(self, current, i, j):
+    def propose_swap(self, state, i, j):
 
-        self[i].parameter.set(current[j].value)
+        self[i].parameter.set(state[j].value)
         state_ij = self[i].create_state()
 
-        self[j].parameter.set(current[i].value)
+        self[j].parameter.set(state[i].value)
         state_ji = self[j].create_state()
 
         return state_ij, state_ji

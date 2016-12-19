@@ -10,14 +10,22 @@ from isdhic.rex import ReplicaState
 
 from run_rex import Replica
 
-def create_replica(q, beta):
-
-    resolution = 500  
+def create_posterior(resolution = 500):
+    
     filename   = './chrX_cell1_{0}kb.py'.format(resolution)
 
     with open(filename) as script:
         exec script
 
+    return posterior
+
+def create_replica(q, beta, posterior=None):
+
+    posterior = posterior or create_posterior()
+
+    diameter = posterior['tsallis'].forcefield.d[0,0]
+    coords = posterior.params['coordinates']
+    n_particles = len(coords)/3
     extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
     coords.set(extended)
 
@@ -115,12 +123,19 @@ def create_samples(n_samples, rex, samples):
 
 if __name__ == '__main__':
 
-    n_replicas = 50
+    from csb.io import load, dump
+    import os
+    
+    n_replicas = 10
     schedule   = np.transpose([
         np.logspace(0., np.log10(1.06), n_replicas),
         np.linspace(1., 0.1, n_replicas)])
-    
-    replicas = [create_replica(q,beta) for q, beta in schedule]
+
+    schedule = load(os.path.expanduser('~/tmp/geo_rosetta_contacts_Rg_6_schedule.pkl'))
+    schedule[0,:] = 1.
+
+    posterior = create_posterior()
+    replicas = [create_replica(q,beta,posterior) for q, beta in schedule]
 
     rex = ParallelReplicaExchange(replicas, n_cpus=3)
 
@@ -130,7 +145,7 @@ if False:
 
     from isd.ro import threaded
 
-    threaded(create_samples, 1e3, rex, samples)
+    threaded(create_samples, 50, rex, samples)
 
 if False:
 
@@ -146,3 +161,21 @@ if False:
     for sampler in rex.samplers:
 
         print out.format(sampler.q, sampler.beta, sampler.stepsize, sampler.history)
+
+if False:
+
+    samples = load('/tmp/samples.pkl')
+
+    E = np.array([[s.potential_energy for s in S] for S in samples])
+    X = np.array([[s.positions for s in S] for S in samples])
+
+    EE = []
+    for x in X:
+        e = []
+        for k, y in enumerate(x):
+            sampler = rex[k]
+            sampler.parameter.set(y)
+            sampler.set_replica_params()
+            e.append(sampler.model.log_prob())
+        EE.append(e)
+    EE = np.array(EE)
