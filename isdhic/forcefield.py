@@ -47,6 +47,17 @@ class Forcefield(Nominable, CWrapper):
 
         self.name = name
 
+    def __getstate__(self):
+
+        state = super(Forcefield, self).__getstate__()
+
+        state['nblist'] = state.pop('_nblist')
+        state['n_types'] = self.n_types
+        state['d'] = self.d
+        state['k'] = self.k
+        
+        return state
+    
     def set_default_values(self):
 
         self.nblist = None

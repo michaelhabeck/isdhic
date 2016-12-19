@@ -110,6 +110,15 @@ class NBList(CWrapper):
         """
         self.ctype.update(universe.coords, int(update_box))
 
+    def __setstate__(self, state):
+
+        n_cells = state.pop('n_cells')
+
+        super(NBList, self).__setstate__(state)
+
+        self.n_cells = n_cells
+        self.enable()
+        
     def __str__(self):
 
         s = '{0}({1},{2},{3},{4})'
