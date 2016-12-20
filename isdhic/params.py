@@ -37,11 +37,9 @@ class Parameter(Nominable):
         return self._value
 
     def set(self, value):
-
         raise NotImplementedError
 
-    def update(self):
-        
+    def update(self):        
         pass
 
     def __str__(self):
@@ -51,25 +49,6 @@ class Parameter(Nominable):
             v = '{0:.2f}'.format(v[0]) if type(v[0]) == float else v[0]
             v = '[{0},...]'.format(v)
         return s.replace(')',', {})'.format(v))
-
-class ParameterReference(Nominable):
-
-    def __init__(self, parameter):
-        self.name = parameter.name
-
-    @property
-    def reference(self):
-        from .model import Probability
-        return Probability._params[self.name]
-    
-    def get(self):
-        return self.reference.get()
-
-    def set(self, value):
-        self.reference.set(value)
-
-    def update(self):
-        self.reference.update()
 
 class Location(Parameter):
     """Location
@@ -224,7 +203,7 @@ class ModelDistances(Distances):
         """
         super(ModelDistances, self).__init__(pairs, name)
 
-        self._coords = ParameterReference(coords)
+        self._coords = coords 
 
     def update(self):
 
@@ -264,7 +243,7 @@ class RadiusOfGyration(Parameter):
         """
         super(RadiusOfGyration, self).__init__(name)
 
-        self._coords = ParameterReference(coords)
+        self._coords = coords 
         
     def set_default(self):
         self.set(0.)
@@ -305,11 +284,23 @@ class Parameters(object):
 
     def add(self, param):
 
-        if param in self._params:
+        if param.name in self._params:
             msg = 'Parameter "{}" already added'.format(param)
             raise ValueError(msg)
 
         self._params[param.name] = param
+
+    def update(self, other_params, ignore_duplications=False):
+
+        for param in other_params:
+
+            try:
+                self.add(param)
+            except ValueError, msg:
+                if not ignore_duplications:
+                    raise Exception('Duplicated parameter "{}"'.format(param))
+            except Exception, msg:
+                raise Exception(msg)
 
     def __str__(self):
         s = ['Parameters:']
