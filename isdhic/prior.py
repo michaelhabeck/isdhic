@@ -19,9 +19,9 @@ class BoltzmannEnsemble(Probability):
     def beta(self, value):
         self._beta.set(value)
 
-    def __init__(self, name, forcefield):
+    def __init__(self, name, forcefield, params):
 
-        super(BoltzmannEnsemble, self).__init__(name)
+        super(BoltzmannEnsemble, self).__init__(name, params)
 
         self.forcefield = forcefield
 
@@ -79,9 +79,9 @@ class TsallisEnsemble(BoltzmannEnsemble):
     def E_min(self, value):
         self._E_min.set(value)
 
-    def __init__(self, name, forcefield):
+    def __init__(self, name, forcefield, params):
 
-        super(TsallisEnsemble, self).__init__(name, forcefield)
+        super(TsallisEnsemble, self).__init__(name, forcefield, params)
 
         self._q = Scale(self.name + '.q')
         self.params.add(self._q)

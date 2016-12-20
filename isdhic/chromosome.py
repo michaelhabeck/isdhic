@@ -52,8 +52,6 @@ class ChromosomeSimulation(object):
     def create_params(self):
 
         params = Parameters()
-        Probability.set_params(params)
-
         coords = Coordinates(self.universe)
         forces = Forces(self.universe)
 
@@ -68,7 +66,7 @@ class ChromosomeSimulation(object):
         forcefield.d = np.array([[self.diameter]])
         forcefield.k = np.array([[self.k_forcefield]])
 
-        prior = TsallisEnsemble('tsallis', forcefield)
+        prior = TsallisEnsemble('tsallis', forcefield, self.params)
         prior.beta   = self.beta
         prior.E_min  = self.E_min
 
@@ -76,28 +74,26 @@ class ChromosomeSimulation(object):
     
     def create_chain(self):
 
-        connectivity = zip(range(self.n_particles-1),range(1,self.n_particles))
-        coords       = self.params['coordinates']
-        backbone     = ModelDistances(coords, connectivity, 'backbone')
+        connectivity = zip(range(self.n_particles), range(1,self.n_particles))
+        backbone     = ModelDistances(connectivity, 'backbone')
         bonds        = np.ones(self.n_particles-1) * self.diameter
-        lowerupper   = LowerUpper(backbone.name, bonds, backbone, 0 * bonds, bonds, self.k_backbone)
+        lowerupper   = LowerUpper(backbone.name, bonds, backbone, 0 * bonds, bonds, self.k_backbone,
+                                  params=self.params)
 
         return lowerupper
 
     def create_contacts(self, pairs):
 
         threshold = np.ones(len(pairs)) * self.factor * self.diameter
-        coords    = self.params['coordinates']
-        contacts  = ModelDistances(coords, pairs, 'contacts')
-        logistic  = Logistic(contacts.name, threshold, contacts, self.steepness)
+        contacts  = ModelDistances(pairs, 'contacts')
+        logistic  = Logistic(contacts.name, threshold, contacts, self.steepness, params=self.params)
 
         return logistic
 
     def create_radius_of_gyration(self, Rg=0.):
 
-        coords = self.params['coordinates']
-        radius = RadiusOfGyration(coords)
-        normal = Normal(radius.name, np.array([Rg]), radius)
+        radius = RadiusOfGyration()
+        normal = Normal(radius.name, np.array([Rg]), radius, params=self.params)
 
         return normal
 

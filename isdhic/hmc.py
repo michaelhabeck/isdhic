@@ -1,7 +1,6 @@
 import numpy as np
 
 from .mcmc import AdaptiveWalk
-from .params import ParameterReference
 
 class Hamiltonian(object):
 
@@ -107,7 +106,7 @@ class HamiltonianMonteCarlo(AdaptiveWalk):
         self.leapfrog = Leapfrog(Hamiltonian(model))
 
         super(HamiltonianMonteCarlo, self).__init__(
-            model, ParameterReference(model.params['coordinates']), stepsize=stepsize)
+            model, model.params['coordinates'], stepsize=stepsize)
 
         self.uprate   = 1.05
         self.downrate = 0.96

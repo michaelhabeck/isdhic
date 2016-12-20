@@ -10,34 +10,16 @@ class Probability(Nominable):
 
     Generic class that will be subclassed by all probabilistic models.
     """
-    _params = None
-
-    @classmethod
-    def set_params(cls, params):
-        
-        if not isinstance(params, Parameters):
-            msg = 'Argument must be an instance of the Parameters class'            
-            raise TypeError(msg)
-        
-        cls._params = params
-        
-    @property
-    def params(self):
-        params = self.__class__._params
-        if params is None:
-            msg = 'Parameters have not been set'
-            raise Exception(msg)
-        return params
-
     def log_prob(self):
         raise NotImplementedError
 
     def sample(self):
         raise NotImplementedError
 
-    def __init__(self, name):
-        self.name = name
-
+    def __init__(self, name, params=None):
+        self.name   = name
+        self.params = params or Parameters()
+        
 class Likelihood(Probability):
 
     @validatedproperty
@@ -65,7 +47,7 @@ class Likelihood(Probability):
     def beta(self, value):
         self._beta.set(value)
     
-    def __init__(self, name, data, mock, beta=1.0):
+    def __init__(self, name, data, mock, beta=1.0, params=None):
         """Likelihood
 
         Initialize likelihood by providing a name, the raw data
@@ -87,7 +69,7 @@ class Likelihood(Probability):
         beta : non-negative float
           inverse temperature used in tempering and annealing          
         """
-        super(Likelihood, self).__init__(name)
+        super(Likelihood, self).__init__(name, params)
 
         self.data = data
         self.mock = mock
@@ -96,6 +78,9 @@ class Likelihood(Probability):
         self._beta = Scale(self.name + '.beta')
         self.params.add(self._beta)
         self.beta  = beta
+
+    def update(self):
+        self.mock.update(self.params)
         
     def update_derivatives(self):
         """
@@ -109,7 +94,7 @@ class Likelihood(Probability):
         Update Cartesian forces by applying the chain rule.
         """
         self.update_derivatives()
-        self.mock.update_forces(self.grad, self.params['forces'].get())
+        self.mock.update_forces(self.grad, self.params)
 
 class Normal(Likelihood):
     """Normal
@@ -139,9 +124,9 @@ class Normal(Likelihood):
         """
         return 1 / self.tau**0.5
 
-    def __init__(self, name, data, mock, precision=1.0):
+    def __init__(self, name, data, mock, precision=1.0, params=None):
 
-        super(Normal, self).__init__(name, data, mock)
+        super(Normal, self).__init__(name, data, mock, params=params)
 
         self._precision = Precision(self.name + '.precision')
         self.tau = precision
@@ -195,9 +180,9 @@ class LowerUpper(Normal):
 
         return logZ(self.lower, self.upper, self.tau)
 
-    def __init__(self, name, data, mock, lower, upper, precision=1.0):
+    def __init__(self, name, data, mock, lower, upper, precision=1.0, params=None):
 
-        super(LowerUpper, self).__init__(name, data, mock, precision)
+        super(LowerUpper, self).__init__(name, data, mock, precision, params=params)
 
         self.lower = lower
         self.upper = upper
@@ -247,9 +232,9 @@ class Logistic(Likelihood):
     def alpha(self, value):
         self._steepness.set(value)
     
-    def __init__(self, name, data, mock, steepness=1.0):
+    def __init__(self, name, data, mock, steepness=1.0, params=None):
         
-        super(Logistic, self).__init__(name, data, mock)
+        super(Logistic, self).__init__(name, data, mock, params=params)
 
         self._steepness = Scale(self.name + '.steepness')        
         self.alpha = steepness

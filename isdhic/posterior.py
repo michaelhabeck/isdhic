@@ -7,7 +7,7 @@ Conditional posteriors
 ##
 import numpy as np
 
-from .model import Probability
+from .model import Probability, Likelihood
 
 class ConditionalPosterior(Probability):
     """ConditionalPosterior
@@ -37,10 +37,28 @@ class ConditionalPosterior(Probability):
         """
         super(ConditionalPosterior, self).__init__(name)
 
-        self.likelihoods = likelihoods or ()
-        self.priors = priors or ()
+        self.likelihoods = []
+        self.priors = []
+
+        for prob in (likelihoods or []) + (priors or []):
+            self.add(prob)
+
+    def add(self, prob):
+        """
+        Add likelihood or prior factor to posterior.
+        """
+        self.params.update(prob.params, ignore_duplications=True)            
+        prob.params = self.params
+        
+        if isinstance(prob, Likelihood):
+            self.likelihoods.append(prob)
+        else:
+            self.priors.append(prob)
 
     def __iter__(self):
+        """
+        Iterator over prior and likelihood factors.
+        """
         for p in self.priors:
             yield p
         for p in self.likelihoods:
@@ -72,21 +90,14 @@ class ConditionalPosterior(Probability):
         return log_p
 
     def update(self):
-        """
-        Overwrite to update specific parameters.
-        """
-        pass
+        for model in self.likelihoods:
+            model.update()
 
 class PosteriorCoordinates(ConditionalPosterior):
     """PosteriorCoordinates
 
     Conditional posterior over the Cartesian coordinates.
     """
-    def update(self):
-
-        for model in self.likelihoods:
-            model.mock.update()
-
     def update_forces(self):
         """
         Update Cartesian gradient of the factors with respect

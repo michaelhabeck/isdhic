@@ -39,9 +39,6 @@ class Parameter(Nominable):
     def set(self, value):
         raise NotImplementedError
 
-    def update(self):        
-        pass
-
     def __str__(self):
         s = super(Parameter, self).__str__()
         v = self._value
@@ -93,11 +90,9 @@ class Array(Parameter):
         self._value = np.ascontiguousarray(np.zeros(int(size)))
 
     def set(self, value):
-
         self._value[...] = np.reshape(value, (-1,))
 
     def __len__(self):
-
         return len(self._value)
 
 class Coordinates(Array):
@@ -180,12 +175,21 @@ class Distances(Array):
 
         super(Distances, self).set(distances)
 
-class ModelDistances(Distances):
+class MockData(Parameter):
+    """ MockData
+
+    Theory that allows the computation of idealized data from other
+    parameters.
+    """
+    def update(self, params):        
+        pass
+
+class ModelDistances(Distances,MockData):
     """ModelDistances
 
     Class for storing and *evaluating* inter-particle distances. 
     """
-    def __init__(self, coords, pairs, name='distances'):
+    def __init__(self, pairs, name='distances'):
         """Distances
 
         Pairwise distances between particles
@@ -193,57 +197,43 @@ class ModelDistances(Distances):
         Parameters
         ----------
 
-        coords : Coordinates instance
-          coordinates stored in Coordinates indstance will be used to compute
-          inter-particle distances
-
         pairs : iterable
           2-tuples specifying the particles whose pairwise distances will be
           computed
         """
         super(ModelDistances, self).__init__(pairs, name)
 
-        self._coords = coords 
-
-    def update(self):
+    def update(self, params):
 
         from .distance import calc_data
 
-        calc_data(self._coords.get(),
+        calc_data(params['coordinates'].get(),
                   self.first_index,
                   self.second_index,
                   self._value)
 
-    def update_forces(self, derivatives, forces):
+    def update_forces(self, derivatives, params):
         """
         Computes the Cartesian gradient assuming that an instance of
         'Distances' is passed as the dataset
         """
         from .distance import update_forces
 
-        update_forces(self._coords.get(),
+        update_forces(params['coordinates'].get(),
                       self.first_index,
                       self.second_index,
                       self._value,
                       derivatives,
-                      forces)
+                      params['forces'].get())
 
-class RadiusOfGyration(Parameter):
+class RadiusOfGyration(MockData):
 
-    def __init__(self, coords, name='rog'):
+    def __init__(self, name='rog'):
         """RadiusOfGyration
 
         Mean distance from center of mass
-
-        Parameters
-        ----------
-
-        coords : 
-          instance of the Coordinates class
         """
         super(RadiusOfGyration, self).__init__(name)
-
-        self._coords = coords 
         
     def set_default(self):
         self.set(0.)
@@ -256,19 +246,20 @@ class RadiusOfGyration(Parameter):
 
         self._value = value
         
-    def update(self):
+    def update(self, params):
 
-        coords = self._coords.get().reshape(-1,3)
+        coords = params['coordinates'].get().reshape(-1,3)
         Rg = np.mean(np.sum((coords - coords.mean(0))**2,1))**0.5
 
         self.set(Rg)
 
-    def update_forces(self, derivatives, forces):
+    def update_forces(self, derivatives, params):
 
-        x = self._coords.get().reshape(-1,3)
+        x = params['coordinates'].get().reshape(-1,3)
 
         grad = derivatives[0] * (x - x.mean(0)) / self.get() / len(x)
 
+        forces  = params['forces'].get()
         forces += grad.reshape(forces.shape)
 
 class Parameters(object):
@@ -293,7 +284,6 @@ class Parameters(object):
     def update(self, other_params, ignore_duplications=False):
 
         for param in other_params:
-
             try:
                 self.add(param)
             except ValueError, msg:
