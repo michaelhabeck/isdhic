@@ -49,7 +49,6 @@ if __name__ == '__main__':
     n_particles  = len(posterior.universe.atoms)
 
     params       = isdhic.Parameters()
-    isdhic.Probability.set_params(params)
 
     universe     = utils.create_universe(n_particles, beadsize)
     coords       = isdhic.Coordinates(universe)
@@ -59,21 +58,21 @@ if __name__ == '__main__':
     forcefield.d = np.array([[beadsize]])
     forcefield.k = np.array([[0.0486]])
 
-    contacts     = isdhic.ModelDistances(coords, contacts, 'contacts')
-    logistic     = isdhic.Logistic(contacts.name, L_intra.data.values, contacts)
+    contacts     = isdhic.ModelDistances(contacts, 'contacts')
+    logistic     = isdhic.Logistic(contacts.name, L_intra.data.values, contacts, params=params)
 
     connectivity = zip(range(n_particles-1),range(1,n_particles))
-    backbone     = isdhic.ModelDistances(coords, connectivity, 'backbone')
+    backbone     = isdhic.ModelDistances(connectivity, 'backbone')
     lowerupper   = isdhic.LowerUpper(backbone.name, L_bbone.data.values, backbone,
                                      L_bbone.error_model.lower_bounds,
-                                     L_bbone.error_model.upper_bounds)
+                                     L_bbone.error_model.upper_bounds, params=params)
 
-    radius       = isdhic.RadiusOfGyration(coords)
-    normal       = isdhic.Normal(radius.name, L_rog.data.values, radius, L_rog.error_model.k)
+    radius       = isdhic.RadiusOfGyration()
+    normal       = isdhic.Normal(radius.name, L_rog.data.values, radius, L_rog.error_model.k, params=params)
 
     for param in (coords, forces): params.add(param)
 
-    tsallis = isdhic.TsallisEnsemble('tsallis',forcefield)
+    tsallis = isdhic.TsallisEnsemble('tsallis',forcefield,params)
     tsallis.E_min = prior.E_min
     tsallis.beta  = prior.beta
 
@@ -114,7 +113,7 @@ if __name__ == '__main__':
     L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 1, 0, 0, 0
 
     with take_time('evaluating logistic likelihood with isdhic'):
-        contacts.update()
+        logistic.update()
         a = logistic.log_prob()
 
     with take_time('evaluating logistic likelihood with isd'):
@@ -125,7 +124,6 @@ if __name__ == '__main__':
 
     with take_time('calculating forces with isdhic'):
         forces.set(0.)
-        contacts.update()
         logistic.update_forces()
 
     with take_time('calculating forces with isd'):
@@ -140,7 +138,7 @@ if __name__ == '__main__':
     L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 0, 0, 1, 0
 
     with take_time('evaluating lowerupper model with isdhic'):
-        backbone.update()
+        lowerupper.update()
         a = lowerupper.log_prob()
 
     with take_time('evaluating lowerupper model with isd'):
@@ -151,7 +149,6 @@ if __name__ == '__main__':
 
     with take_time('calculating forces with isdhic'):
         forces.set(0.)
-        backbone.update()
         lowerupper.update_forces()
 
     with take_time('calculating forces with isd'):
@@ -166,7 +163,7 @@ if __name__ == '__main__':
     L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 0, 0, 0, 1
 
     with take_time('evaluating rog model with isdhic'):
-        radius.update()
+        normal.update()
         a = normal.log_prob()
 
     with take_time('evaluating rog model with isd'):
@@ -177,7 +174,6 @@ if __name__ == '__main__':
 
     with take_time('calculating forces with isdhic'):
         forces.set(0.)
-        radius.update()
         normal.update_forces()
 
     with take_time('calculating forces with isd'):
@@ -192,10 +188,9 @@ if __name__ == '__main__':
     L_intra.enabled, prior.enabled, L_bbone.enabled, L_rog.enabled = 1, 1, 1, 1
 
     with take_time('evaluating posterior with isdhic'):
-        for mock in (backbone, contacts, radius):
-            mock.update()
         a = 0.
         for model in (tsallis, logistic, lowerupper, normal):
+            if hasattr(model, 'mock'): model.update()
             a += model.log_prob()
 
     with take_time('evaluating posterior with isd'):
@@ -209,7 +204,6 @@ if __name__ == '__main__':
         tsallis.update_forces()
 
         for model in (logistic, lowerupper, normal):
-            model.mock.update()
             model.update_forces()
 
     with take_time('calculating forces with isd'):
