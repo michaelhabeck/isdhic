@@ -52,6 +52,25 @@ class Parameter(Nominable):
             v = '[{0},...]'.format(v)
         return s.replace(')',', {})'.format(v))
 
+class ParameterReference(Nominable):
+
+    def __init__(self, parameter):
+        self.name = parameter.name
+
+    @property
+    def reference(self):
+        from .model import Probability
+        return Probability._params[self.name]
+    
+    def get(self):
+        return self.reference.get()
+
+    def set(self, value):
+        self.reference.set(value)
+
+    def update(self):
+        self.reference.update()
+
 class Location(Parameter):
     """Location
 
@@ -205,8 +224,8 @@ class ModelDistances(Distances):
         """
         super(ModelDistances, self).__init__(pairs, name)
 
-        self._coords = coords
-        
+        self._coords = ParameterReference(coords)
+
     def update(self):
 
         from .distance import calc_data
@@ -245,8 +264,8 @@ class RadiusOfGyration(Parameter):
         """
         super(RadiusOfGyration, self).__init__(name)
 
-        self._coords = coords
-
+        self._coords = ParameterReference(coords)
+        
     def set_default(self):
         self.set(0.)
 
