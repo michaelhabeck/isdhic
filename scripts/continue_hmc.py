@@ -23,7 +23,7 @@ if __name__ == '__main__':
     with open(filename) as script:
         exec script
 
-    coords.set(lift_coords(hmc.samples[-1].positions, n_particles))
+    coords.set(lift_coords(samples[-1].positions, n_particles))
 
     ## use Hamiltonian Monte Carlo to sample X chromosome structures from the
     ## posterior distribution
@@ -37,6 +37,9 @@ if __name__ == '__main__':
     hmc_fine.adapt_until      = int(1e6) #0.5 * n_steps)
     hmc_fine.activate()
 
+    samples_fine = []
+
     with take_time('running HMC'):
-        hmc_fine.run(n_steps)
+        while len(samples_fine) < n_steps:
+            samples_fine.append(hmc_fine.next())
 

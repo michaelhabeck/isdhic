@@ -156,26 +156,12 @@ if False:
 
     E = np.array([[s.potential_energy for s in S] for S in samples])
 
-    out = '{0:.3e}, {1:.3e}, {2:.3e} : {3}'
+    out = '{0:.3e}, {1:.3e}, {2:.3e} : {3}, -log_prob={4:.3e}'
 
     for sampler in rex.samplers:
 
-        print out.format(sampler.q, sampler.beta, sampler.stepsize, sampler.history)
+        print out.format(sampler.q, sampler.beta, sampler.stepsize, sampler.history, 
+                         sampler.state.potential_energy)
 
-if False:
-
-    samples = load('/tmp/samples.pkl')
-
-    E = np.array([[s.potential_energy for s in S] for S in samples])
-    X = np.array([[s.positions for s in S] for S in samples])
-
-    EE = []
-    for x in X:
-        e = []
-        for k, y in enumerate(x):
-            sampler = rex[k]
-            sampler.parameter.set(y)
-            sampler.set_replica_params()
-            e.append(sampler.model.log_prob())
-        EE.append(e)
-    EE = np.array(EE)
+    rates = np.array([rex.history[pair].acceptance_rate() for pair in rex.history.pairs])
+    
