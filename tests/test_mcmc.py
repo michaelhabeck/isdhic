@@ -42,8 +42,6 @@ if __name__ == '__main__':
 
     print history
 
-    isdhic.Probability.set_params(isdhic.Parameters())
-
     gaussian = Gaussian()
 
     ## start at improbable initial sample

@@ -75,8 +75,6 @@ if __name__ == '__main__':
 
     ## setup replicas
 
-    isdhic.Probability.set_params(isdhic.Parameters())
-    
     schedule = np.linspace(0.01, 1., 7)
     samplers = []
     

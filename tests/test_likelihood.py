@@ -26,11 +26,11 @@ class Logistic(isdhic.Logistic):
 
         self.grad[...] = - self.alpha / (1 + np.exp(-self.alpha * (x-y)))
 
-def log_prob(x, coords, likelihood):
+def log_prob(x, params, likelihood):
 
-    coords.set(x)
+    params['coordinates'].set(x)
 
-    likelihood.mock.update()
+    likelihood.update()
 
     return likelihood.log_prob()
 
@@ -42,22 +42,23 @@ if __name__ == '__main__':
     coords    = isdhic.Coordinates(universe)
     forces    = isdhic.Forces(universe)
 
+    ## create parameters
+    
+    params    = isdhic.Parameters()
+
     ## create contact data
     
     n_data    = 100
     pairs     = random_pairs(universe.n_particles, n_data)
     data      = np.random.random(n_data) * 10.
-    mock      = isdhic.ModelDistances(coords, pairs, 'contacts')
-    logistic  = Logistic('contacts', data, mock)
-    logistic2 = isdhic.Logistic('contacts', data, mock)
+    mock      = isdhic.ModelDistances( pairs, 'contacts')
+    logistic  = Logistic('contacts', data, mock, params=params)
+    logistic2 = isdhic.Logistic('contacts2', data, mock, params=params)
 
-    params    = isdhic.Parameters()
-    isdhic.Probability.set_params(params)
-    
     for param in (coords, forces, mock, logistic.steepness):
         params.add(param)
 
-    mock.update()
+    mock.update(params)
 
     with take_time('evaluating python version of logistic likelihood'):
         lgp = logistic.log_prob()
@@ -80,8 +81,8 @@ if __name__ == '__main__':
 
     ## numerical gradient
 
-    f = lambda x, coords=coords, likelihood=logistic: \
-        log_prob(x, coords, likelihood)
+    f = lambda x, params=params, likelihood=logistic: \
+        log_prob(x, params, likelihood)
 
     x = coords.get().copy()
 

@@ -56,8 +56,6 @@ class Oscillator(isdhic.Probability):
 
 if __name__ == '__main__':
 
-    isdhic.Probability.set_params(isdhic.Parameters())
-
     osci = Oscillator(np.diag([10.,1.]))
     osci = Oscillator(np.array([[10.,-2.5],
                                 [-2.5,1.]]))

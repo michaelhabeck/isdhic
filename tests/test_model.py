@@ -41,9 +41,9 @@ class Gaussian(Probability):
         self._precision = isdhic.Precision(self.name + '.tau')
         self._location  = isdhic.Location(self.name + '.x')
         
-        self._params.add(self._location)
-        self._params.add(self._mean)
-        self._params.add(self._precision)
+        self.params.add(self._location)
+        self.params.add(self._mean)
+        self.params.add(self._precision)
 
     def log_prob(self):
 
@@ -53,12 +53,9 @@ class Gaussian(Probability):
 
 if __name__ == '__main__':
 
-    params = isdhic.Parameters()
-    isdhic.Probability.set_params(params)
-
     model = Gaussian()
 
-    print params
+    print model.params
 
     statement = "model.tau = -1.0"
     try:
