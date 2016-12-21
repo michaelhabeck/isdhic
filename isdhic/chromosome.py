@@ -82,10 +82,10 @@ class ChromosomeSimulation(object):
 
         return lowerupper
 
-    def create_contacts(self, pairs):
+    def create_contacts(self, pairs, name='contacts'):
 
         threshold = np.ones(len(pairs)) * self.factor * self.diameter
-        contacts  = ModelDistances(pairs, 'contacts')
+        contacts  = ModelDistances(pairs, name)
         logistic  = Logistic(contacts.name, threshold, contacts, self.steepness, params=self.params)
 
         return logistic

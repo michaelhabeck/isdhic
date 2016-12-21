@@ -171,3 +171,27 @@ if False:
 
     rates = np.array([rex.history[pair].acceptance_rate() for pair in rex.history.pairs])
     
+if False:
+
+    from csb.bio.utils import rmsd
+    from scipy.spatial.distance import squareform
+    
+    burnin = -400
+    thining = 1#0
+
+    mask = np.ones(333,'i')
+    mask[:11] = 0
+    mask[47:66] = 0
+
+    x = X[burnin::thining].reshape(-1,333,3)
+    x = np.compress(mask,x,1)
+    d = [rmsd(xx,x[j]) for i, xx in enumerate(x) for j in range(i+1,len(x))]
+
+    from sklearn.cluster import spectral_clustering
+
+    K = 4
+    membership = spectral_clustering(np.exp(-squareform(d)), n_clusters=K, eigen_solver='arpack')
+
+    i = np.argsort(membership)
+
+    matshow(squareform(d)[i][:,i],origin='lower')
