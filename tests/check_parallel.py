@@ -7,6 +7,17 @@ if not 'rex' in globals():
     with open('./run_parallel.py') as script:
         exec script
 
+def calc_energy(state, rex):
+
+    E = []
+    for x, s in zip(state,rex.samplers):
+        s.set_replica_params()
+        #s.model.params['coordinates'].set(x.positions)
+        s.parameter.set(x.positions)
+        E.append(-s.model.log_prob())
+
+    return E
+
 samples = load('/tmp/samples{}.pkl'.format(['',2][0]))
 
 E = np.array([[s.potential_energy for s in S] for S in samples])

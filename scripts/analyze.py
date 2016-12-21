@@ -19,9 +19,11 @@ class Ensemble(object):
     def average_distances(self, burnin=0, thining=1):
         
         d = 0.
+        n = 0
         for x in self.samples[burnin::thining]:
             d += distance_matrix(x)
-        d/= len(X)
+            n += 1
+        d/= n
 
         return d
 
