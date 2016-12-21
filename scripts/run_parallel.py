@@ -5,6 +5,8 @@ import isdhic
 import numpy as np
 import multiprocessing as mp
 
+from copy import deepcopy
+
 from isdhic import utils
 from isdhic.rex import ReplicaState
 
@@ -29,19 +31,19 @@ def create_replica(q, beta, posterior=None):
     extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
     coords.set(extended)
 
-    return Replica(posterior, n_steps=10, q=q, beta=beta)
+    return Replica(posterior, n_steps=10, n_leaps=250, q=q, beta=beta)
 
 def sample(initial, q, beta, stepsize):
 
     sampler = create_replica(q, beta)
     sampler.activate()
     
-    sampler.state = initial
+    sampler.state = deepcopy(initial)
     sampler.stepsize = stepsize
     
     state = sampler.next()
 
-    return state, sampler.stepsize, sampler.history
+    return deepcopy(state), sampler.stepsize, sampler.history
 
 ## class Bridge(object):
 ##     """
@@ -95,11 +97,11 @@ class ParallelReplicaExchange(isdhic.ReplicaExchange):
 
         print 'Parallel computation finished.'
 
-        return ReplicaState(states)
+        self.state = ReplicaState(states)
+
+        return self.state
 
     def next(self):
-
-        ## state  = self._samplers.propose(self.workers)
 
         state  = self.move_parallel()
         accept = {}
@@ -126,18 +128,22 @@ if __name__ == '__main__':
     from csb.io import load, dump
     import os
     
-    n_replicas = 10
+    n_replicas = 50
     schedule   = np.transpose([
         np.logspace(0., np.log10(1.06), n_replicas),
         np.linspace(1., 0.1, n_replicas)])
 
-    schedule = load(os.path.expanduser('~/tmp/geo_rosetta_contacts_Rg_6_schedule.pkl'))
+    try:
+        schedule = load(os.path.expanduser('~/tmp/geo_rosetta_contacts_Rg_6_schedule.pkl'))
+    except:
+        schedule = load('/space/users/mhabeck/tmp/geo_rosetta_contacts_Rg_6_schedule.pkl')
+        
     schedule[0,:] = 1.
 
     posterior = create_posterior()
     replicas = [create_replica(q,beta,posterior) for q, beta in schedule]
 
-    rex = ParallelReplicaExchange(replicas, n_cpus=3)
+    rex = ParallelReplicaExchange(replicas, n_cpus=25)
 
     samples = []
 
@@ -145,7 +151,7 @@ if False:
 
     from isd.ro import threaded
 
-    threaded(create_samples, 50, rex, samples)
+    threaded(create_samples, 1e4, rex, samples)
 
 if False:
 
