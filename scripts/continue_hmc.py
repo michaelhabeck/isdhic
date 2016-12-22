@@ -4,6 +4,8 @@ Continue HMC sampling at higher resolution.
 This script assumes that 'run_hmc.py' has already been executed in
 the *same* python session.
 """
+import numpy as np
+
 from scipy import interpolate
 
 def lift_coords(coarse_coords, n_fine):
