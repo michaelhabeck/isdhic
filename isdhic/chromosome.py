@@ -5,7 +5,7 @@ import numpy as np
 
 from .utils import create_universe
 from .prior import TsallisEnsemble
-from .model import Probability, Normal, LowerUpper, Logistic
+from .model import Probability, Normal, LowerUpper, Logistic, Relu
 from .params import Forces, Coordinates, Parameters, ModelDistances, RadiusOfGyration
 from .posterior import PosteriorCoordinates
 from .forcefield import ForcefieldFactory
@@ -14,15 +14,16 @@ class ChromosomeSimulation(object):
 
     def __init__(self, n_particles, forcefield='rosetta', diameter=4.0, **settings):
 
-        self.n_particles  = int(n_particles)
-        self.forcefield   = str(forcefield)
-        self.diameter     = float(diameter)
-        self.k_backbone   = settings.get('k_backbone', 250.)
-        self.k_forcefield = settings.get('k_forcefield', 0.0486)
-        self.beta         = settings.get('beta', 1.0)
-        self.E_min        = settings.get('E_min', -100.)
-        self.steepness    = settings.get('steepness', 100.)
-        self.factor       = settings.get('factor', 1.5)
+        self.n_particles   = int(n_particles)
+        self.forcefield    = str(forcefield)
+        self.diameter      = float(diameter)
+        self.k_backbone    = settings.get('k_backbone', 250.)
+        self.k_forcefield  = settings.get('k_forcefield', 0.0486)
+        self.beta          = settings.get('beta', 1.0)
+        self.E_min         = settings.get('E_min', -100.)
+        self.steepness     = settings.get('steepness', 100.)
+        self.factor        = settings.get('factor', 1.5)
+        self.contact_model = settings.get('contact_model','logistic')
         
         self._universe = None
         self._params   = None
@@ -82,13 +83,19 @@ class ChromosomeSimulation(object):
 
         return lowerupper
 
-    def create_contacts(self, pairs, name='contacts'):
+    def create_contacts(self, pairs, name='contacts', model='logistic'):
 
         threshold = np.ones(len(pairs)) * self.factor * self.diameter
         contacts  = ModelDistances(pairs, name)
-        logistic  = Logistic(contacts.name, threshold, contacts, self.steepness, params=self.params)
 
-        return logistic
+        if model == 'logistic':
+            return Logistic(contacts.name, threshold, contacts,
+                            self.steepness, params=self.params)
+        elif model == 'relu':
+            return Relu(contacts.name, threshold, contacts,
+                        self.steepness, params=self.params)
+        else:
+            raise ValueError(model)
 
     def create_radius_of_gyration(self, Rg=0.):
 
@@ -105,7 +112,7 @@ class ChromosomeSimulation(object):
         priors = (self.create_prior(),)
 
         likelihoods = (self.create_chain(),
-                       self.create_contacts(contacts),
+                       self.create_contacts(contacts, model=self.contact_model),
                        self.create_radius_of_gyration())
 
         posterior = PosteriorCoordinates(
