@@ -49,6 +49,7 @@ tau_rog     = n_rog / sigma_rog**2
 parser      = HiCParser(filename, 'X', 'X')
 datasets    = parser.parse()
 dataset     = datasets[('X','X')]
+model       = ('logistic', 'relu')[0]
 
 dataset.coarsen(n_particles, chrsize)
 dataset.remove_self_contacts()
@@ -59,7 +60,8 @@ simulation  = ChromosomeSimulation(n_particles,
                                    forcefield = forcefield,
                                    k_backbone = k_backbone,
                                    diameter   = diameter,
-                                   factor     = factor)
+                                   factor     = factor,
+                                   contact_model = model)
 
 posterior = simulation.create_chromosome(list(dataset))
 universe  = simulation.universe
