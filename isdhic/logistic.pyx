@@ -19,7 +19,7 @@ cdef extern from "math.h":
     double exp(double)
     
 
-@cython.boundscheck(True)
+@cython.boundscheck(False)
 @cython.wraparound(False)
 def softplus(double x):
     if x > 0:
@@ -27,7 +27,7 @@ def softplus(double x):
     else:
         return log(1 + exp(x))
     
-@cython.boundscheck(True)
+@cython.boundscheck(False)
 @cython.wraparound(False)
 def log_prob(double [::1] data,
              double [::1] mock,
@@ -43,7 +43,7 @@ def log_prob(double [::1] data,
 
     return lgp
 
-@cython.boundscheck(True)
+@cython.boundscheck(False)
 @cython.wraparound(False)
 def update_derivatives(double [::1] data,
                        double [::1] mock,
