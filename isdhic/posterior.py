@@ -106,6 +106,7 @@ class PosteriorCoordinates(ConditionalPosterior):
         the conditional posterior. 
         """
         self.update()
-
+        self.params['forces'].set(0.)
+        
         for p in self: p.update_forces()
 

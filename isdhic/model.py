@@ -260,3 +260,24 @@ class Logistic(Likelihood):
         
         return s
 
+class Relu(Logistic):
+    """Relu
+
+    Relu likelihood for binary observations.
+    """
+    def log_prob(self):
+
+        from .relu import log_prob
+
+        return self.beta * log_prob(self.data, self.mock.get(), self.alpha)
+
+    def update_derivatives(self):
+
+        from .relu import update_derivatives
+
+        ## self.grad[...] = 0.
+
+        update_derivatives(self.data, self.mock.get(), self.grad, self.alpha)
+
+        self.grad *= self.beta
+

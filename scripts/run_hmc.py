@@ -51,12 +51,42 @@ if __name__ == '__main__':
     
     hmc = HamiltonianMonteCarlo(posterior,stepsize=stepsize)
     hmc.leapfrog.n_steps = int(n_leaps)
-    hmc.adapt_until      = int(0.5 * n_steps)
+    hmc.adapt_until      = int(0.5 * n_steps) * 10
     hmc.activate()
 
+    posterior['contacts'].alpha = 100.
+    hmc.stepsize = 1e-3
+    
     samples = []
 
+if not False:
+    
+    counter = 0
     with take_time('running HMC'):
-        while len(samples) < n_steps:
-            samples.append(hmc.next())
+        while counter < n_steps:
+            samples.append(next(hmc))
+            counter += 1
+            
+if False:
 
+    from scipy import optimize
+
+    class Target(object):
+
+        def __init__(self, posterior):
+
+            self.posterior = posterior
+
+        def __call__(self, x):
+
+            self.posterior.params['coordinates'].set(x)
+
+            return self.posterior.log_prob()
+
+    target = Target(posterior)
+
+    posterior.update_forces()
+    a = posterior.params['forces'].get()
+    x = posterior.params['coordinates'].get().copy()
+
+    b = optimize.approx_fprime(x, target, 1e-5)
