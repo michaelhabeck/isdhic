@@ -91,3 +91,26 @@ if False:
 
     print np.fabs(a-b).max(), round(100*np.corrcoef(a,b)[0,1])
 
+if False:
+
+    from scipy import optimize
+
+    class Target(object):
+
+        def __init__(self, posterior):
+
+            self.posterior = posterior
+
+        def __call__(self, x):
+
+            self.posterior.params['coordinates'].set(x)
+
+            return self.posterior.log_prob()
+
+    target = Target(posterior)
+
+    posterior.update_forces()
+    a = posterior.params['forces'].get()
+    x = posterior.params['coordinates'].get().copy()
+
+    b = optimize.approx_fprime(x, target, 1e-5)

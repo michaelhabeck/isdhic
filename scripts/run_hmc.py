@@ -37,11 +37,6 @@ if __name__ == '__main__':
     extended = np.multiply.outer(np.arange(n_particles), np.eye(3)[0]) * diameter
     coords.set(extended)
 
-    if False:
-
-        posterior['tsallis'].q = 1.02
-        posterior['contacts'].beta = posterior['rog'].beta = 0.1
-
     ## use Hamiltonian Monte Carlo to sample X chromosome structures from the
     ## posterior distribution
 
@@ -59,34 +54,9 @@ if __name__ == '__main__':
     
     samples = []
 
-if not False:
-    
     counter = 0
     with take_time('running HMC'):
         while counter < n_steps:
             samples.append(next(hmc))
             counter += 1
             
-if False:
-
-    from scipy import optimize
-
-    class Target(object):
-
-        def __init__(self, posterior):
-
-            self.posterior = posterior
-
-        def __call__(self, x):
-
-            self.posterior.params['coordinates'].set(x)
-
-            return self.posterior.log_prob()
-
-    target = Target(posterior)
-
-    posterior.update_forces()
-    a = posterior.params['forces'].get()
-    x = posterior.params['coordinates'].get().copy()
-
-    b = optimize.approx_fprime(x, target, 1e-5)
