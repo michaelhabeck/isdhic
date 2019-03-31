@@ -13,10 +13,10 @@ coords      = np.ascontiguousarray(np.random.rand(3*n_particles) * boxsize)
 universe    = isdhic.Universe(n_particles)
 forcefield  = isdhic.ForcefieldFactory.create_forcefield('rosetta', universe)
 
-print forcefield.energy(coords), 
+print(forcefield.energy(coords)) 
 
 E = forcefield.ctype.update_gradient(coords, universe.forces, forcefield.types, 1)
-print E
+print(E)
 
 a = universe.forces.flatten()
 
@@ -25,4 +25,4 @@ msg = 'eps={0:.0e}, norm={1:.2e}, corr={2:.1f}'
 for eps in np.logspace(-3,-8,6):
 
     b = optimize.approx_fprime(coords, forcefield.energy, eps)
-    print msg.format(eps, np.fabs((a-b)/np.fabs(a)).max(), np.corrcoef(a,b)[0,1]*100)
+    print(msg.format(eps, np.fabs((a-b)/np.fabs(a)).max(), np.corrcoef(a,b)[0,1]*100))

@@ -126,7 +126,7 @@ int forcefield_set_k(PyForceFieldObject *self, PyObject *op){
     RAISE(PyExc_ValueError, "rank must be (n_types, n_types).", -1);
   }
   if (!(k = MALLOC(n_types * n_types, double))) {
-    RAISE(PyExc_StandardError, "malloc failed (set_k)", -1);
+    RAISE(PyExc_MemoryError, "malloc failed (set_k)", -1);
   }
 
   s0 = K->strides[0];
@@ -165,7 +165,7 @@ int forcefield_set_d(PyForceFieldObject *self, PyObject *op){
     RAISE(PyExc_ValueError, "rank must be (n_types, n_types).", -1);
   }
   if (!(d = MALLOC(n_types * n_types, double))) {
-    RAISE(PyExc_StandardError, "malloc failed (set_d)", -1);
+    RAISE(PyExc_MemoryError, "malloc failed (set_d)", -1);
   }
   s0 = D->strides[0];
   s1 = D->strides[1];
@@ -263,10 +263,18 @@ int forcefield_setattr(PyForceFieldObject *self, char *name, PyObject *op) {
   int n_types;
 
   if (!strcmp(name, "enabled")) {
+#if PY_MAJOR_VERSION >= 3
+    self->enabled = (int) PyLong_AsLong(op);
+#else
     self->enabled = (int) PyInt_AsLong(op);
+#endif
   }
   else if (!strcmp(name, "n_types")) {
+#if PY_MAJOR_VERSION >= 3
+    n_types = (int) PyLong_AsLong(op);
+#else
     n_types = (int) PyInt_AsLong(op);
+#endif
     
     if (n_types != self->n_types) {
       if (self->k) free(self->k);

@@ -112,7 +112,7 @@ static PyObject * py_energy(PyRosettaObject *self, PyObject *args) {
   PyArrayObject *coords, *types;
 
   if (!PyArg_ParseTuple(args, "O!O!", &PyArray_Type, &coords, &PyArray_Type, &types)) {
-    RAISE(PyExc_StandardError, "numpy arrays storing coordinates and atom types expected.", NULL);
+    RAISE(PyExc_ValueError, "numpy arrays storing coordinates and atom types expected.", NULL);
   }
   return Py_BuildValue("d", forcefield_energy((PyForceFieldObject*)self, 
 					      (double*) coords->data, 
@@ -218,7 +218,9 @@ PyTypeObject PyRosetta_Type = {
   (printfunc)NULL,	       /*tp_print*/
   (getattrfunc)getattr,        /*tp_getattr*/
   (setattrfunc)setattr,        /*tp_setattr*/
+#if PY_MAJOR_VERSION < 3
   (cmpfunc)NULL,               /*tp_compare*/
+#endif
   (reprfunc)NULL,	       /*tp_repr*/
   
   NULL,		               /*tp_as_number*/

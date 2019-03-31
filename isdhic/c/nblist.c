@@ -34,18 +34,18 @@ static int init_cells(PyNBListObject *self, int n_atoms) {
   /* at most #atoms-cells can be non-empty */
 
   if (!(self->filled = MALLOC(n_atoms, Cell))) {
-    RAISE(PyExc_StandardError, "init_cells: malloc failed.", -1);
+    RAISE(PyExc_MemoryError, "init_cells: malloc failed.", -1);
   }
 
   for (i = 0; i < n_atoms; i++) {
     if (!(self->filled[i].objects = MALLOC(self->n_per_cell, int))) {
-      RAISE(PyExc_StandardError, "init_cells: malloc failed.", -1);
+      RAISE(PyExc_MemoryError, "init_cells: malloc failed.", -1);
     }
     self->filled[i].n_objects = 0;
   }
 
   if (!(self->cells = MALLOC(n_cells, Cell*))) {
-    RAISE(PyExc_StandardError, "init_cells: malloc failed.", -1);
+    RAISE(PyExc_MemoryError, "init_cells: malloc failed.", -1);
   }
 
   /* initially, all cells are empty. */
@@ -119,7 +119,7 @@ static int assign_atoms(PyNBListObject *self, vector *coords, int n_coords, int 
   int n_cells     = self->n_cells;
 
   if (!n_contacts) {
-    RAISE(PyExc_StandardError, "assign_atoms: n_contacts has not been allocated.", -1);
+    RAISE(PyExc_MemoryError, "assign_atoms: n_contacts has not been allocated.", -1);
   }
 
   /* determine new bounding box: if the bounding box cannot be 
@@ -380,13 +380,13 @@ static int set_natoms(PyNBListObject *self, int n) {
   /* allocate new interaction lists */
   
   if (!(self->n_contacts = MALLOC(n, int))) {
-    RAISE(PyExc_StandardError, "set_natoms: malloc failed (n_contacts)", -1);
+    RAISE(PyExc_MemoryError, "set_natoms: malloc failed (n_contacts)", -1);
   }
   if (!(self->contacts = MALLOC(n, int*))) {
-    RAISE(PyExc_StandardError, "set_natoms: malloc failed (contacts)", -1);
+    RAISE(PyExc_MemoryError, "set_natoms: malloc failed (contacts)", -1);
   }
   if (!(self->sq_distances = MALLOC(n, double*))) {
-    RAISE(PyExc_StandardError, "set_natoms: malloc failed (sq_distances)", -1);
+    RAISE(PyExc_MemoryError, "set_natoms: malloc failed (sq_distances)", -1);
   }
     
   for(i=0; i < n; i++) {
@@ -396,10 +396,10 @@ static int set_natoms(PyNBListObject *self, int n) {
     self->sq_distances[i] = NULL;
     
     if (!(self->contacts[i] = MALLOC(max_n, int))) {
-      RAISE(PyExc_StandardError, "set_natoms: malloc failed (contacts[i])", -1);
+      RAISE(PyExc_MemoryError, "set_natoms: malloc failed (contacts[i])", -1);
     }
     if (!(self->sq_distances[i] = MALLOC(max_n, double))) {
-      RAISE(PyExc_StandardError, "set_natoms: malloc failed (sq_distances[i])", -1);
+      RAISE(PyExc_MemoryError, "set_natoms: malloc failed (sq_distances[i])", -1);
     }
   }
   self->n_atoms = n;
@@ -439,7 +439,7 @@ static PyObject *getattr(PyNBListObject *self, char *name) {
     /* create and fill dummy array */
     
     if (!(dummy = MALLOC(dims[0] * max, int))) {
-      RAISE(PyExc_StandardError, "contacts: MALLOC failed", NULL);
+      RAISE(PyExc_MemoryError, "contacts: MALLOC failed", NULL);
     }
     
     for (i = 0; i < dims[0]; i++) {
@@ -477,7 +477,7 @@ static PyObject *getattr(PyNBListObject *self, char *name) {
     /* create and fill dummy array */
     
     if (!(ddummy = MALLOC(dims[0] * max, double))) {
-      RAISE(PyExc_StandardError, "sq_distances: MALLOC failed", NULL);
+      RAISE(PyExc_MemoryError, "sq_distances: MALLOC failed", NULL);
     }
     
     for (i = 0; i < dims[0]; i++) {
@@ -547,22 +547,38 @@ static PyObject *getattr(PyNBListObject *self, char *name) {
 static int setattr(PyNBListObject *self, char *name, PyObject *op) {  
 
   if (!strcmp(name, "enabled")) {
+#if PY_MAJOR_VERSION >= 3
+    self->enabled = (int) PyLong_AsLong(op);
+#else
     self->enabled = (int) PyInt_AsLong(op);
+#endif
   }
   else if (!strcmp(name, "cellsize")) {
     self->cellsize = (double) PyFloat_AsDouble(op);
   }
   else if (!strcmp(name, "n_cells")) {
+#if PY_MAJOR_VERSION >= 3
+    self->n_cells = (int) PyLong_AsLong(op);
+#else
     self->n_cells = (int) PyInt_AsLong(op);
+#endif
     set_neighbors(self);
     del_cells(self);
     init_cells(self, self->n_atoms);
   }
   else if (!strcmp(name, "n_per_cell")) {
+#if PY_MAJOR_VERSION >= 3
+    self->n_per_cell = (int) PyLong_AsLong(op);
+#else
     self->n_per_cell = (int) PyInt_AsLong(op);
+#endif
   }
   else if (!strcmp(name, "n_atoms")) {
+#if PY_MAJOR_VERSION >= 3
+    return set_natoms(self, (int) PyLong_AsLong(op));
+#else
     return set_natoms(self, (int) PyInt_AsLong(op));
+#endif
   }
   else {
     RAISE(PyExc_AttributeError, "Attribute does not exist or cannot be set", -1);
@@ -582,7 +598,9 @@ PyTypeObject PyNBList_Type = {
 	(printfunc)NULL,	             /*tp_print*/
        	(getattrfunc)getattr,                /*tp_getattr*/
 	(setattrfunc)setattr,                /*tp_setattr*/
+#if PY_MAJOR_VERSION < 3
 	(cmpfunc)NULL,         	             /*tp_compare*/
+#endif
 	(reprfunc)NULL,	                     /*tp_repr*/
 
 	NULL,		                     /*tp_as_number*/
