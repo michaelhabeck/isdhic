@@ -20,7 +20,7 @@ def take_time(desc):
     t0 = time.clock()
     yield
     dt = time.clock() - t0
-    print '{0} took {1}'.format(desc, format_time(dt))
+    print('{0} took {1}'.format(desc, format_time(dt)))
 
 class ctypeproperty(property):
     """

@@ -30,7 +30,8 @@ class HiCData(object):
     def __iter__(self):
         return iter(self.data)
 
-    def add(self, (i,j)):
+    def add(self, pair):
+        i, j = pair
         self.data.append((i,j))
                 
     def remove_self_contacts(self):

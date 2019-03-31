@@ -37,7 +37,10 @@ class State(object):
 
     A state in phase space.
     """
-    def __init__(self, (positions, momenta), (potential_energy, kinetic_energy)):
+    def __init__(self, state, energies):
+
+        positions, momenta = state
+        potential_energy, kinetic_energy = energies
 
         self.positions = positions
         self.momenta   = momenta
